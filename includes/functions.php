@@ -283,6 +283,75 @@ function normalizeDateString(string $value): ?string
     return null;
 }
 
+/**
+ * Normalize a numeric value from a CSV cell into a non-negative float.
+ *
+ * @param mixed $value
+ */
+function normalizeCsvNumber($value): ?float
+{
+    if (is_int($value) || is_float($value)) {
+        $number = (float) $value;
+    } else {
+        if ($value === null) {
+            return null;
+        }
+        $stringValue = is_string($value) ? trim($value) : trim((string) $value);
+        if ($stringValue === '') {
+            return null;
+        }
+
+        $negative = strpos($stringValue, '-') !== false
+            || (strpos($stringValue, '(') !== false && strpos($stringValue, ')') !== false);
+
+        $normalized = preg_replace('/[^0-9.,-]/', '', $stringValue);
+        if (!is_string($normalized) || $normalized === '') {
+            return null;
+        }
+
+        $normalized = str_replace(["\u{00A0}", ' '], '', $normalized);
+
+        $commaPos = strrpos($normalized, ',');
+        $dotPos = strrpos($normalized, '.');
+        if ($commaPos !== false && $dotPos !== false) {
+            if ($commaPos > $dotPos) {
+                $normalized = str_replace('.', '', $normalized);
+                $normalized = str_replace(',', '.', $normalized);
+            } else {
+                $normalized = str_replace(',', '', $normalized);
+            }
+        } elseif ($commaPos !== false) {
+            $parts = explode(',', $normalized);
+            if (count($parts) > 1) {
+                $lastPart = end($parts);
+                if ($lastPart !== false && strlen($lastPart) === 3) {
+                    $normalized = implode('', $parts);
+                } else {
+                    $normalized = implode('.', $parts);
+                }
+            } else {
+                $normalized = str_replace(',', '', $normalized);
+            }
+        }
+
+        $normalized = str_replace('-', '', $normalized);
+        if ($normalized === '' || !is_numeric($normalized)) {
+            return null;
+        }
+
+        $number = (float) $normalized;
+        if ($negative) {
+            $number = -abs($number);
+        }
+    }
+
+    if ($number < 0) {
+        return 0.0;
+    }
+
+    return $number;
+}
+
 function resolveParameters(
     int $warehouseId,
     string $sku,
@@ -509,14 +578,11 @@ function importSalesCsv(
         if ($useMapping) {
             $saleDateRaw = $row[$index['sale_date']] ?? '';
             $skuRaw = $row[$index['sku']] ?? '';
-            $quantityRaw = $row[$index['quantity']] ?? '';
+            $quantityRaw = $row[$index['quantity']] ?? null;
             $saleDateRaw = is_string($saleDateRaw) ? trim($saleDateRaw) : (string) $saleDateRaw;
             $skuRaw = is_string($skuRaw) ? trim($skuRaw) : (string) $skuRaw;
-            $quantityValue = is_string($quantityRaw) ? trim($quantityRaw) : (string) $quantityRaw;
-            if ($skuRaw === '' || $saleDateRaw === '' || $quantityValue === '') {
-                continue;
-            }
-            if (!is_numeric($quantityValue)) {
+            $quantityValue = normalizeCsvNumber($quantityRaw);
+            if ($skuRaw === '' || $saleDateRaw === '' || $quantityValue === null) {
                 continue;
             }
 
@@ -529,7 +595,7 @@ function importSalesCsv(
             $skuParam = $skuRaw;
 
             $saleDateParam = $normalizedDate;
-            $quantityParam = (float) $quantityValue;
+            $quantityParam = $quantityValue;
         } else {
             if (count($row) !== $columnCount) {
                 continue;
@@ -537,11 +603,8 @@ function importSalesCsv(
             $warehouseCode = trim((string) $row[$index['warehouse_code']]);
             $skuRaw = trim((string) $row[$index['sku']]);
             $saleDateRaw = trim((string) $row[$index['sale_date']]);
-            $quantityValue = $row[$index['quantity']];
-            if ($warehouseCode === '' || $skuRaw === '' || $saleDateRaw === '') {
-                continue;
-            }
-            if (!is_numeric($quantityValue)) {
+            $quantityValue = normalizeCsvNumber($row[$index['quantity']] ?? null);
+            if ($warehouseCode === '' || $skuRaw === '' || $saleDateRaw === '' || $quantityValue === null) {
                 continue;
             }
 
@@ -557,7 +620,7 @@ function importSalesCsv(
                 continue;
             }
             $skuParam = $skuRaw;
-            $quantityParam = (float) $quantityValue;
+            $quantityParam = $quantityValue;
         }
         $insert->execute();
         $rowCount++;
@@ -651,13 +714,10 @@ function importStockCsv(
     while (($row = fgetcsv($handle)) !== false) {
         if ($useMapping) {
             $skuRaw = $row[$index['sku']] ?? '';
-            $quantityRaw = $row[$index['quantity']] ?? '';
+            $quantityRaw = $row[$index['quantity']] ?? null;
             $skuRaw = is_string($skuRaw) ? trim($skuRaw) : (string) $skuRaw;
-            $quantityValue = is_string($quantityRaw) ? trim($quantityRaw) : (string) $quantityRaw;
-            if ($skuRaw === '' || $quantityValue === '') {
-                continue;
-            }
-            if (!is_numeric($quantityValue)) {
+            $quantityValue = normalizeCsvNumber($quantityRaw);
+            if ($skuRaw === '' || $quantityValue === null) {
                 continue;
             }
             if ($snapshotOverride !== null) {
@@ -678,7 +738,7 @@ function importStockCsv(
             }
             $warehouseIdParam = (int) $warehouseId;
             $skuParam = $skuRaw;
-            $quantityParam = (float) $quantityValue;
+            $quantityParam = $quantityValue;
         } else {
             if (count($row) !== $columnCount) {
                 continue;
@@ -686,11 +746,8 @@ function importStockCsv(
             $warehouseCode = trim((string) $row[$index['warehouse_code']]);
             $skuRaw = trim((string) $row[$index['sku']]);
             $snapshotRaw = trim((string) $row[$index['snapshot_date']]);
-            $quantityValue = $row[$index['quantity']];
-            if ($warehouseCode === '' || $skuRaw === '' || $snapshotRaw === '') {
-                continue;
-            }
-            if (!is_numeric($quantityValue)) {
+            $quantityValue = normalizeCsvNumber($row[$index['quantity']] ?? null);
+            if ($warehouseCode === '' || $skuRaw === '' || $snapshotRaw === '' || $quantityValue === null) {
                 continue;
             }
 
@@ -706,7 +763,7 @@ function importStockCsv(
                 continue;
             }
             $skuParam = $skuRaw;
-            $quantityParam = (float) $quantityValue;
+            $quantityParam = $quantityValue;
         }
         $insert->execute();
         $rowCount++;
