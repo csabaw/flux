@@ -6,6 +6,81 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 
+function getPreviewSessionKey(string $type): string
+{
+    return $type . '_upload_preview';
+}
+
+function clearUploadPreview(string $type): void
+{
+    $key = getPreviewSessionKey($type);
+    if (isset($_SESSION[$key]) && is_array($_SESSION[$key])) {
+        $path = $_SESSION[$key]['file_path'] ?? null;
+        if (is_string($path) && $path !== '' && file_exists($path)) {
+            @unlink($path);
+        }
+    }
+    unset($_SESSION[$key]);
+}
+
+function setUploadPreview(string $type, array $data): void
+{
+    clearUploadPreview($type);
+    $_SESSION[getPreviewSessionKey($type)] = $data;
+}
+
+function updateUploadPreview(string $type, array $updates): void
+{
+    $key = getPreviewSessionKey($type);
+    if (!isset($_SESSION[$key]) || !is_array($_SESSION[$key])) {
+        return;
+    }
+    $_SESSION[$key] = array_merge($_SESSION[$key], $updates);
+}
+
+function getUploadPreview(string $type): ?array
+{
+    $key = getPreviewSessionKey($type);
+    $preview = $_SESSION[$key] ?? null;
+    return is_array($preview) ? $preview : null;
+}
+
+function createCsvPreview(string $filePath, int $maxRows = 5): ?array
+{
+    $handle = fopen($filePath, 'r');
+    if (!$handle) {
+        return null;
+    }
+    $header = fgetcsv($handle);
+    if ($header === false) {
+        fclose($handle);
+        return null;
+    }
+    $rows = [];
+    while (count($rows) < $maxRows && ($row = fgetcsv($handle)) !== false) {
+        $rows[] = $row;
+    }
+    fclose($handle);
+    return [
+        'header' => $header,
+        'rows' => $rows,
+    ];
+}
+
+function createTempUploadPath(string $prefix): string
+{
+    try {
+        $random = bin2hex(random_bytes(8));
+    } catch (\Exception $e) {
+        $random = str_replace('.', '', uniqid('', true));
+    }
+    $directory = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR);
+    if ($directory === '') {
+        $directory = sys_get_temp_dir();
+    }
+    return $directory . DIRECTORY_SEPARATOR . $prefix . $random . '.csv';
+}
+
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     logout();
     header('Location: index.php');
@@ -29,29 +104,196 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Please log in to continue.';
     } else {
         switch ($action) {
-            case 'upload_sales':
-                if (isset($_FILES['sales_csv']) && $_FILES['sales_csv']['error'] === UPLOAD_ERR_OK) {
-                    $result = importSalesCsv($mysqli, $_FILES['sales_csv']['tmp_name']);
-                    if ($result['success']) {
-                        $messages[] = $result['message'];
-                    } else {
-                        $errors[] = $result['message'];
-                    }
-                } else {
+            case 'preview_sales':
+                $warehouseId = (int) ($_POST['warehouse_id'] ?? 0);
+                $warehousesList = getWarehouses($mysqli);
+                if ($warehouseId <= 0 || !isset($warehousesList[$warehouseId])) {
+                    $errors[] = 'Please choose a warehouse.';
+                    break;
+                }
+                if (!isset($_FILES['sales_csv']) || $_FILES['sales_csv']['error'] !== UPLOAD_ERR_OK) {
                     $errors[] = 'Please choose a CSV file to upload.';
+                    break;
+                }
+                $destination = createTempUploadPath('flux_sales_');
+                if (!move_uploaded_file($_FILES['sales_csv']['tmp_name'], $destination)) {
+                    @unlink($destination);
+                    $errors[] = 'Failed to store uploaded file.';
+                    break;
+                }
+                $preview = createCsvPreview($destination);
+                if ($preview === null) {
+                    @unlink($destination);
+                    $errors[] = 'CSV file is empty or invalid.';
+                    break;
+                }
+                setUploadPreview('sales', [
+                    'warehouse_id' => $warehouseId,
+                    'file_path' => $destination,
+                    'header' => $preview['header'],
+                    'rows' => $preview['rows'],
+                    'filename' => $_FILES['sales_csv']['name'] ?? 'uploaded.csv',
+                    'column_map' => [],
+                    'uploaded_at' => time(),
+                ]);
+                $messages[] = 'File uploaded. Please select the columns to import.';
+                break;
+            case 'confirm_sales':
+                $preview = getUploadPreview('sales');
+                if (!$preview) {
+                    $errors[] = 'Please upload a sales CSV first.';
+                    break;
+                }
+                $columnInput = $_POST['column_map'] ?? [];
+                if (!is_array($columnInput)) {
+                    $columnInput = [];
+                }
+                $columnMap = [];
+                $requiredSalesFields = ['sale_date' => 'sale date', 'sku' => 'SKU', 'quantity' => 'quantity'];
+                foreach ($requiredSalesFields as $key => $label) {
+                    if (!isset($columnInput[$key]) || $columnInput[$key] === '') {
+                        $errors[] = 'Please select a column for the ' . $label . '.';
+                        continue;
+                    }
+                    $columnMap[$key] = (int) $columnInput[$key];
+                }
+                $header = $preview['header'] ?? [];
+                $headerCount = is_array($header) ? count($header) : 0;
+                foreach ($columnMap as $idx) {
+                    if ($idx < 0 || $idx >= $headerCount) {
+                        $errors[] = 'One or more selected columns are invalid.';
+                        break;
+                    }
+                }
+                if (!empty($columnMap)) {
+                    updateUploadPreview('sales', ['column_map' => $columnMap]);
+                }
+                $warehouseId = (int) ($preview['warehouse_id'] ?? 0);
+                $warehousesList = getWarehouses($mysqli);
+                if ($warehouseId <= 0 || !isset($warehousesList[$warehouseId])) {
+                    $errors[] = 'The selected warehouse could not be found.';
+                }
+                $filePath = $preview['file_path'] ?? '';
+                if (!is_string($filePath) || $filePath === '' || !file_exists($filePath)) {
+                    $errors[] = 'Uploaded file is no longer available. Please upload it again.';
+                }
+                if (!empty($errors)) {
+                    break;
+                }
+                $result = importSalesCsv($mysqli, $filePath, $warehouseId, $columnMap);
+                if ($result['success']) {
+                    $messages[] = $result['message'];
+                    clearUploadPreview('sales');
+                } else {
+                    $errors[] = $result['message'];
                 }
                 break;
-            case 'upload_stock':
-                if (isset($_FILES['stock_csv']) && $_FILES['stock_csv']['error'] === UPLOAD_ERR_OK) {
-                    $result = importStockCsv($mysqli, $_FILES['stock_csv']['tmp_name']);
-                    if ($result['success']) {
-                        $messages[] = $result['message'];
-                    } else {
-                        $errors[] = $result['message'];
-                    }
-                } else {
-                    $errors[] = 'Please choose a CSV file to upload.';
+            case 'cancel_sales_preview':
+                clearUploadPreview('sales');
+                $messages[] = 'Sales upload canceled.';
+                break;
+            case 'preview_stock':
+                $warehouseId = (int) ($_POST['warehouse_id'] ?? 0);
+                $warehousesList = getWarehouses($mysqli);
+                if ($warehouseId <= 0 || !isset($warehousesList[$warehouseId])) {
+                    $errors[] = 'Please choose a warehouse.';
+                    break;
                 }
+                $snapshotInput = trim($_POST['snapshot_date'] ?? '');
+                if ($snapshotInput === '') {
+                    $errors[] = 'Please provide a snapshot date.';
+                    break;
+                }
+                $snapshotDate = \DateTimeImmutable::createFromFormat('Y-m-d', $snapshotInput);
+                if (!$snapshotDate) {
+                    $errors[] = 'Snapshot date must be in YYYY-MM-DD format.';
+                    break;
+                }
+                if (!isset($_FILES['stock_csv']) || $_FILES['stock_csv']['error'] !== UPLOAD_ERR_OK) {
+                    $errors[] = 'Please choose a CSV file to upload.';
+                    break;
+                }
+                $destination = createTempUploadPath('flux_stock_');
+                if (!move_uploaded_file($_FILES['stock_csv']['tmp_name'], $destination)) {
+                    @unlink($destination);
+                    $errors[] = 'Failed to store uploaded file.';
+                    break;
+                }
+                $preview = createCsvPreview($destination);
+                if ($preview === null) {
+                    @unlink($destination);
+                    $errors[] = 'CSV file is empty or invalid.';
+                    break;
+                }
+                setUploadPreview('stock', [
+                    'warehouse_id' => $warehouseId,
+                    'file_path' => $destination,
+                    'header' => $preview['header'],
+                    'rows' => $preview['rows'],
+                    'filename' => $_FILES['stock_csv']['name'] ?? 'uploaded.csv',
+                    'snapshot_date' => $snapshotDate->format('Y-m-d'),
+                    'column_map' => [],
+                    'uploaded_at' => time(),
+                ]);
+                $messages[] = 'File uploaded. Please select the columns to import.';
+                break;
+            case 'confirm_stock':
+                $preview = getUploadPreview('stock');
+                if (!$preview) {
+                    $errors[] = 'Please upload a stock snapshot CSV first.';
+                    break;
+                }
+                $columnInput = $_POST['column_map'] ?? [];
+                if (!is_array($columnInput)) {
+                    $columnInput = [];
+                }
+                $columnMap = [];
+                $requiredStockFields = ['sku' => 'SKU', 'quantity' => 'quantity'];
+                foreach ($requiredStockFields as $key => $label) {
+                    if (!isset($columnInput[$key]) || $columnInput[$key] === '') {
+                        $errors[] = 'Please select a column for the ' . $label . '.';
+                        continue;
+                    }
+                    $columnMap[$key] = (int) $columnInput[$key];
+                }
+                $header = $preview['header'] ?? [];
+                $headerCount = is_array($header) ? count($header) : 0;
+                foreach ($columnMap as $idx) {
+                    if ($idx < 0 || $idx >= $headerCount) {
+                        $errors[] = 'One or more selected columns are invalid.';
+                        break;
+                    }
+                }
+                if (!empty($columnMap)) {
+                    updateUploadPreview('stock', ['column_map' => $columnMap]);
+                }
+                $warehouseId = (int) ($preview['warehouse_id'] ?? 0);
+                $warehousesList = getWarehouses($mysqli);
+                if ($warehouseId <= 0 || !isset($warehousesList[$warehouseId])) {
+                    $errors[] = 'The selected warehouse could not be found.';
+                }
+                $snapshotDate = $preview['snapshot_date'] ?? null;
+                if (!is_string($snapshotDate) || $snapshotDate === '') {
+                    $errors[] = 'Snapshot date is missing. Please upload the file again.';
+                }
+                $filePath = $preview['file_path'] ?? '';
+                if (!is_string($filePath) || $filePath === '' || !file_exists($filePath)) {
+                    $errors[] = 'Uploaded file is no longer available. Please upload it again.';
+                }
+                if (!empty($errors)) {
+                    break;
+                }
+                $result = importStockCsv($mysqli, $filePath, $warehouseId, $columnMap, $snapshotDate);
+                if ($result['success']) {
+                    $messages[] = $result['message'];
+                    clearUploadPreview('stock');
+                } else {
+                    $errors[] = $result['message'];
+                }
+                break;
+            case 'cancel_stock_preview':
+                clearUploadPreview('stock');
+                $messages[] = 'Stock upload canceled.';
                 break;
             case 'save_parameters':
                 $warehouseId = (int) ($_POST['warehouse_id'] ?? 0);
@@ -118,6 +360,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $warehouses = getWarehouses($mysqli);
 $warehouseParams = getWarehouseParameters($mysqli);
 $skuParams = getSkuParameters($mysqli);
+$salesPreview = getUploadPreview('sales');
+$stockPreview = getUploadPreview('stock');
 $defaults = $config['defaults'];
 
 ?><!DOCTYPE html>
@@ -264,14 +508,123 @@ $defaults = $config['defaults'];
                             <h5 class="mb-0">Upload Daily Sales CSV</h5>
                         </div>
                         <div class="card-body">
-                            <p class="text-muted">Columns required: <code>warehouse_code, sku, sale_date (YYYY-MM-DD), quantity</code>.</p>
-                            <form method="post" enctype="multipart/form-data">
-                                <input type="hidden" name="action" value="upload_sales">
-                                <div class="mb-3">
-                                    <input class="form-control" type="file" name="sales_csv" accept=".csv" required>
+                            <?php if ($salesPreview): ?>
+                                <?php
+                                    $salesHeader = is_array($salesPreview['header'] ?? null) ? $salesPreview['header'] : [];
+                                    $salesRows = is_array($salesPreview['rows'] ?? null) ? $salesPreview['rows'] : [];
+                                    $salesHeaderCount = count($salesHeader);
+                                    $salesSampleCount = count($salesRows);
+                                    $salesWarehouseId = (int) ($salesPreview['warehouse_id'] ?? 0);
+                                    $salesWarehouseInfo = $warehouses[$salesWarehouseId] ?? null;
+                                    $salesWarehouseLabel = $salesWarehouseInfo
+                                        ? ($salesWarehouseInfo['code'] . ' · ' . $salesWarehouseInfo['name'])
+                                        : ('ID ' . $salesWarehouseId);
+                                    $salesColumnMap = is_array($salesPreview['column_map'] ?? null) ? $salesPreview['column_map'] : [];
+                                    $salesFields = ['sale_date' => 'Sale Date', 'sku' => 'SKU', 'quantity' => 'Quantity'];
+                                ?>
+                                <p class="text-muted">Preview the uploaded file and choose the columns for sale date, SKU, and quantity.</p>
+                                <div class="mb-3 small">
+                                    <div><strong>Warehouse:</strong> <?= htmlspecialchars($salesWarehouseLabel, ENT_QUOTES) ?></div>
+                                    <div><strong>File:</strong> <?= htmlspecialchars((string) ($salesPreview['filename'] ?? 'uploaded.csv'), ENT_QUOTES) ?></div>
+                                    <div><strong>Rows previewed:</strong> <?= $salesSampleCount ?></div>
                                 </div>
-                                <button class="btn btn-primary" type="submit">Import Sales</button>
-                            </form>
+                                <form method="post">
+                                    <input type="hidden" name="action" value="confirm_sales">
+                                    <div class="row g-3 mb-3">
+                                        <?php foreach ($salesHeader as $index => $columnLabel):
+                                            $displayLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column ' . ($index + 1);
+                                        ?>
+                                        <div class="col-md-4">
+                                            <div class="border rounded p-3 h-100">
+                                                <div class="small text-muted text-uppercase mb-1">Column <?= $index + 1 ?></div>
+                                                <div class="fw-semibold text-truncate" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>">
+                                                    <?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <?php foreach ($salesFields as $fieldKey => $fieldLabel):
+                                                        $checked = isset($salesColumnMap[$fieldKey]) && (int) $salesColumnMap[$fieldKey] === (int) $index;
+                                                    ?>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input column-checkbox" type="checkbox" id="sales-<?= $fieldKey ?>-<?= $index ?>" name="column_map[<?= $fieldKey ?>]" value="<?= $index ?>" data-field="<?= $fieldKey ?>" <?= $checked ? 'checked' : '' ?>>
+                                                        <label class="form-check-label small" for="sales-<?= $fieldKey ?>-<?= $index ?>">Use as <?= htmlspecialchars($fieldLabel, ENT_QUOTES) ?></label>
+                                                    </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                        <?php if (empty($salesHeader)): ?>
+                                        <div class="col-12">
+                                            <div class="alert alert-warning mb-0">No columns detected in the uploaded file.</div>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="table-responsive mb-3">
+                                        <table class="table table-sm table-striped align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <?php if ($salesHeaderCount > 0): ?>
+                                                        <?php foreach ($salesHeader as $columnLabel):
+                                                            $headerLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column';
+                                                        ?>
+                                                        <th><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
+                                                        <?php endforeach; ?>
+                                                    <?php else: ?>
+                                                        <th>Data</th>
+                                                    <?php endif; ?>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php if ($salesSampleCount > 0): ?>
+                                                    <?php foreach ($salesRows as $row): ?>
+                                                    <tr>
+                                                        <?php if ($salesHeaderCount > 0): ?>
+                                                            <?php for ($i = 0; $i < $salesHeaderCount; $i++): ?>
+                                                            <td><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
+                                                            <?php endfor; ?>
+                                                        <?php else: ?>
+                                                            <td><?= htmlspecialchars(implode(', ', array_map('strval', $row)), ENT_QUOTES) ?></td>
+                                                        <?php endif; ?>
+                                                    </tr>
+                                                    <?php endforeach; ?>
+                                                <?php else: ?>
+                                                    <tr>
+                                                        <td colspan="<?= max(1, $salesHeaderCount) ?>" class="text-center text-muted">No data rows detected.</td>
+                                                    </tr>
+                                                <?php endif; ?>
+                                            </tbody>
+                                        </table>
+                                        <p class="text-muted small mt-2 mb-0">Showing the first <?= $salesSampleCount ?> row<?= $salesSampleCount === 1 ? '' : 's' ?> from the file.</p>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary" type="submit">Import Sales</button>
+                                    </div>
+                                </form>
+                                <form method="post" class="mt-2">
+                                    <input type="hidden" name="action" value="cancel_sales_preview">
+                                    <button class="btn btn-link text-danger p-0" type="submit">Cancel preview</button>
+                                </form>
+                            <?php else: ?>
+                                <p class="text-muted">Upload a CSV for a single warehouse. After the upload you'll choose the columns for date, SKU, and quantity.</p>
+                                <form method="post" enctype="multipart/form-data">
+                                    <input type="hidden" name="action" value="preview_sales">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="salesWarehouse">Warehouse</label>
+                                        <select class="form-select" id="salesWarehouse" name="warehouse_id" required>
+                                            <option value="">Select warehouse</option>
+                                            <?php foreach ($warehouses as $warehouse): ?>
+                                                <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="salesCsv">Daily Sales CSV</label>
+                                        <input class="form-control" type="file" id="salesCsv" name="sales_csv" accept=".csv" required>
+                                        <div class="form-text">Ensure the file includes columns for sale date (YYYY-MM-DD), SKU, and quantity.</div>
+                                    </div>
+                                    <button class="btn btn-primary" type="submit">Preview Sales File</button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -281,14 +634,130 @@ $defaults = $config['defaults'];
                             <h5 class="mb-0">Upload Stock Snapshot CSV</h5>
                         </div>
                         <div class="card-body">
-                            <p class="text-muted">Columns required: <code>warehouse_code, sku, snapshot_date (YYYY-MM-DD), quantity</code>.</p>
-                            <form method="post" enctype="multipart/form-data">
-                                <input type="hidden" name="action" value="upload_stock">
-                                <div class="mb-3">
-                                    <input class="form-control" type="file" name="stock_csv" accept=".csv" required>
+                            <?php if ($stockPreview): ?>
+                                <?php
+                                    $stockHeader = is_array($stockPreview['header'] ?? null) ? $stockPreview['header'] : [];
+                                    $stockRows = is_array($stockPreview['rows'] ?? null) ? $stockPreview['rows'] : [];
+                                    $stockHeaderCount = count($stockHeader);
+                                    $stockSampleCount = count($stockRows);
+                                    $stockWarehouseId = (int) ($stockPreview['warehouse_id'] ?? 0);
+                                    $stockWarehouseInfo = $warehouses[$stockWarehouseId] ?? null;
+                                    $stockWarehouseLabel = $stockWarehouseInfo
+                                        ? ($stockWarehouseInfo['code'] . ' · ' . $stockWarehouseInfo['name'])
+                                        : ('ID ' . $stockWarehouseId);
+                                    $stockColumnMap = is_array($stockPreview['column_map'] ?? null) ? $stockPreview['column_map'] : [];
+                                    $stockFields = ['sku' => 'SKU', 'quantity' => 'Quantity'];
+                                    $stockSnapshotDate = (string) ($stockPreview['snapshot_date'] ?? '');
+                                ?>
+                                <p class="text-muted">Preview the uploaded file and choose the columns for SKU and quantity.</p>
+                                <div class="mb-3 small">
+                                    <div><strong>Warehouse:</strong> <?= htmlspecialchars($stockWarehouseLabel, ENT_QUOTES) ?></div>
+                                    <div><strong>Snapshot date:</strong> <?= htmlspecialchars($stockSnapshotDate, ENT_QUOTES) ?></div>
+                                    <div><strong>File:</strong> <?= htmlspecialchars((string) ($stockPreview['filename'] ?? 'uploaded.csv'), ENT_QUOTES) ?></div>
+                                    <div><strong>Rows previewed:</strong> <?= $stockSampleCount ?></div>
                                 </div>
-                                <button class="btn btn-primary" type="submit">Import Stock</button>
-                            </form>
+                                <form method="post">
+                                    <input type="hidden" name="action" value="confirm_stock">
+                                    <div class="row g-3 mb-3">
+                                        <?php foreach ($stockHeader as $index => $columnLabel):
+                                            $displayLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column ' . ($index + 1);
+                                        ?>
+                                        <div class="col-md-4">
+                                            <div class="border rounded p-3 h-100">
+                                                <div class="small text-muted text-uppercase mb-1">Column <?= $index + 1 ?></div>
+                                                <div class="fw-semibold text-truncate" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>">
+                                                    <?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <?php foreach ($stockFields as $fieldKey => $fieldLabel):
+                                                        $checked = isset($stockColumnMap[$fieldKey]) && (int) $stockColumnMap[$fieldKey] === (int) $index;
+                                                    ?>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input column-checkbox" type="checkbox" id="stock-<?= $fieldKey ?>-<?= $index ?>" name="column_map[<?= $fieldKey ?>]" value="<?= $index ?>" data-field="<?= $fieldKey ?>" <?= $checked ? 'checked' : '' ?>>
+                                                        <label class="form-check-label small" for="stock-<?= $fieldKey ?>-<?= $index ?>">Use as <?= htmlspecialchars($fieldLabel, ENT_QUOTES) ?></label>
+                                                    </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                        <?php if (empty($stockHeader)): ?>
+                                        <div class="col-12">
+                                            <div class="alert alert-warning mb-0">No columns detected in the uploaded file.</div>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="table-responsive mb-3">
+                                        <table class="table table-sm table-striped align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <?php if ($stockHeaderCount > 0): ?>
+                                                        <?php foreach ($stockHeader as $columnLabel):
+                                                            $headerLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column';
+                                                        ?>
+                                                        <th><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
+                                                        <?php endforeach; ?>
+                                                    <?php else: ?>
+                                                        <th>Data</th>
+                                                    <?php endif; ?>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php if ($stockSampleCount > 0): ?>
+                                                    <?php foreach ($stockRows as $row): ?>
+                                                    <tr>
+                                                        <?php if ($stockHeaderCount > 0): ?>
+                                                            <?php for ($i = 0; $i < $stockHeaderCount; $i++): ?>
+                                                            <td><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
+                                                            <?php endfor; ?>
+                                                        <?php else: ?>
+                                                            <td><?= htmlspecialchars(implode(', ', array_map('strval', $row)), ENT_QUOTES) ?></td>
+                                                        <?php endif; ?>
+                                                    </tr>
+                                                    <?php endforeach; ?>
+                                                <?php else: ?>
+                                                    <tr>
+                                                        <td colspan="<?= max(1, $stockHeaderCount) ?>" class="text-center text-muted">No data rows detected.</td>
+                                                    </tr>
+                                                <?php endif; ?>
+                                            </tbody>
+                                        </table>
+                                        <p class="text-muted small mt-2 mb-0">Showing the first <?= $stockSampleCount ?> row<?= $stockSampleCount === 1 ? '' : 's' ?> from the file.</p>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary" type="submit">Import Stock</button>
+                                    </div>
+                                </form>
+                                <form method="post" class="mt-2">
+                                    <input type="hidden" name="action" value="cancel_stock_preview">
+                                    <button class="btn btn-link text-danger p-0" type="submit">Cancel preview</button>
+                                </form>
+                            <?php else: ?>
+                                <p class="text-muted">Upload a snapshot CSV for a single warehouse. After the upload you'll choose the columns for SKU and quantity.</p>
+                                <form method="post" enctype="multipart/form-data">
+                                    <input type="hidden" name="action" value="preview_stock">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="stockWarehouse">Warehouse</label>
+                                        <select class="form-select" id="stockWarehouse" name="warehouse_id" required>
+                                            <option value="">Select warehouse</option>
+                                            <?php foreach ($warehouses as $warehouse): ?>
+                                                <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="stockSnapshotDate">Snapshot Date</label>
+                                        <input class="form-control" type="date" id="stockSnapshotDate" name="snapshot_date" required>
+                                        <div class="form-text">All rows in the file will be imported with this snapshot date.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="stockCsv">Stock Snapshot CSV</label>
+                                        <input class="form-control" type="file" id="stockCsv" name="stock_csv" accept=".csv" required>
+                                        <div class="form-text">Ensure the file includes columns for SKU and quantity.</div>
+                                    </div>
+                                    <button class="btn btn-primary" type="submit">Preview Stock File</button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -673,6 +1142,25 @@ $defaults = $config['defaults'];
         });
     }
 
+    function setupColumnCheckboxes() {
+        document.querySelectorAll('.column-checkbox').forEach((checkbox) => {
+            checkbox.addEventListener('change', () => {
+                if (!checkbox.checked) {
+                    return;
+                }
+                const field = checkbox.dataset.field;
+                if (!field) {
+                    return;
+                }
+                document.querySelectorAll(`.column-checkbox[data-field="${field}"]`).forEach((other) => {
+                    if (other !== checkbox) {
+                        other.checked = false;
+                    }
+                });
+            });
+        });
+    }
+
     $(document).ready(function () {
         const numberRenderer = $.fn.dataTable.render.number(',', '.', 2);
         demandTable = $('#demandTable').DataTable({
@@ -720,6 +1208,7 @@ $defaults = $config['defaults'];
         });
 
         refreshDashboard();
+        setupColumnCheckboxes();
     });
 </script>
 </body>
