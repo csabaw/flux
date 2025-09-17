@@ -488,7 +488,6 @@ if ($salesPreview || $stockPreview) {
                                             <th>Warehouse</th>
                                             <th>SKU</th>
                                             <th>Stock</th>
-                                            <th>Snapshot</th>
                                             <th>Moving Avg</th>
                                             <th>Days of Cover</th>
                                             <th>Target Stock</th>
@@ -1064,7 +1063,6 @@ if ($salesPreview || $stockPreview) {
                         `${row.warehouse_code} · ${row.warehouse_name}`,
                         row.sku,
                         row.current_stock,
-                        row.snapshot_date || '',
                         row.moving_average,
                         row.days_of_cover,
                         row.target_stock,
@@ -1119,7 +1117,7 @@ if ($salesPreview || $stockPreview) {
                 $('#demandTable tbody').off('click').on('click', 'tr', function () {
                     const data = demandTable.row(this).data();
                     if (!data) return;
-                    const key = data[9];
+                    const key = data[8];
                     const detail = currentRowsMap.get(key);
                     if (!detail) return;
                     renderTrendSeries(detail);
@@ -1198,10 +1196,10 @@ if ($salesPreview || $stockPreview) {
             paging: true,
             searching: false,
             info: false,
-            order: [[7, 'desc']],
+            order: [[6, 'desc']],
             columnDefs: [
                 {
-                    targets: [2, 4, 6, 7, 8],
+                    targets: [2, 3, 5, 6, 7],
                     render: function (data) {
                         if (data === null || data === '') {
                             return '0.00';
@@ -1210,7 +1208,7 @@ if ($salesPreview || $stockPreview) {
                     },
                 },
                 {
-                    targets: 5,
+                    targets: 4,
                     render: function (data) {
                         if (data === null || data === '' || Number.isNaN(parseFloat(data))) {
                             return '—';
@@ -1219,13 +1217,7 @@ if ($salesPreview || $stockPreview) {
                     },
                 },
                 {
-                    targets: 3,
-                    render: function (data) {
-                        return data || '—';
-                    },
-                },
-                {
-                    targets: 9,
+                    targets: 8,
                     visible: false,
                     searchable: false,
                 },
