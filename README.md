@@ -7,7 +7,7 @@ A PHP web dashboard for multi-warehouse demand planning. The app ingests daily s
 - Secure admin login (credentials stored in `.env`).
 - CSV importers for daily sales and stock snapshots with automatic warehouse creation.
 - Configurable planning parameters per warehouse and optional SKU overrides.
-- Moving-average demand, days of cover, safety stock, and replenishment suggestions.
+- Moving-average demand, days of cover, safety days, and replenishment suggestions.
 - Interactive dashboard table with filters, top reorder chart, and demand trend visualization.
 - JSON API (`/public/api.php`) used by the frontend and available for integrations.
 
@@ -78,9 +78,9 @@ Columns (header row required):
 ## Planning Logic
 
 - Moving-average demand is computed over the configured `ma_window_days` (default 7) ending today.
-- `days_to_cover` determines the stock target horizon. Target stock = `effective_avg_daily * days_to_cover + safety_stock`.
+- `days_to_cover` determines the stock target horizon. Target stock = `effective_avg_daily * (days_to_cover + safety_days)`.
 - `min_avg_daily` acts as a floor for average demand; values below the threshold use the threshold for replenishment calculations.
-- `safety_stock` adds a buffer on top of the target.
+- `safety_days` adds a buffer expressed as extra days of demand.
 - Reorder suggestions are the positive difference between target stock and the latest snapshot quantity.
 
 Warehouse-level parameters can be overridden per SKU from the Parameters page. Removing an override reverts to warehouse defaults (or global defaults when no warehouse-specific values exist).
@@ -109,7 +109,7 @@ Response structure:
       "days_of_cover": 7.74,
       "target_stock": 232.5,
       "reorder_qty": 112.5,
-      "safety_stock": 5,
+      "safety_days": 2,
       "days_to_cover": 14,
       "ma_window_days": 7,
       "min_avg_daily": 1,
