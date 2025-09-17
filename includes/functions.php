@@ -75,16 +75,23 @@ function getLatestStock(mysqli $mysqli, ?int $warehouseId = null, ?string $sku =
         $where = 'WHERE ' . implode(' AND ', $conditions);
     }
 
-    $sql = "SELECT warehouse_id, sku, quantity, snapshot_date FROM ("
-        . "SELECT ss.*, ROW_NUMBER() OVER (PARTITION BY warehouse_id, sku ORDER BY snapshot_date DESC, id DESC) AS rn "
-        . "FROM stock_snapshots ss {$where}"
-        . ") ranked WHERE rn = 1";
+    $sql = 'SELECT warehouse_id, sku, quantity, snapshot_date '
+        . 'FROM stock_snapshots '
+        . $where
+        . ' ORDER BY warehouse_id, sku, snapshot_date DESC, id DESC';
 
     $stock = [];
     if ($result = $mysqli->query($sql)) {
         while ($row = $result->fetch_assoc()) {
             $wId = (int) $row['warehouse_id'];
-            $stock[$wId][$row['sku']] = [
+            $skuCode = $row['sku'];
+            if (!isset($stock[$wId])) {
+                $stock[$wId] = [];
+            }
+            if (isset($stock[$wId][$skuCode])) {
+                continue;
+            }
+            $stock[$wId][$skuCode] = [
                 'quantity' => (float) $row['quantity'],
                 'snapshot_date' => $row['snapshot_date'],
             ];
