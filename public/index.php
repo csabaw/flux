@@ -86,14 +86,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 break;
             case 'add_warehouse':
-                $code = trim($_POST['warehouse_code'] ?? '');
+                $code = strtoupper(trim($_POST['warehouse_code'] ?? ''));
                 $name = trim($_POST['warehouse_name'] ?? '');
                 if ($code === '') {
                     $errors[] = 'Warehouse code is required.';
                     break;
                 }
-                upsertWarehouse($mysqli, $code, $name ?: null);
-                $messages[] = 'Warehouse saved.';
+                $codeLength = function_exists('mb_strlen') ? mb_strlen($code) : strlen($code);
+                if ($codeLength > 50) {
+                    $errors[] = 'Warehouse code must be 50 characters or fewer.';
+                    break;
+                }
+                if ($name !== '') {
+                    $nameLength = function_exists('mb_strlen') ? mb_strlen($name) : strlen($name);
+                    if ($nameLength > 120) {
+                        $errors[] = 'Warehouse name must be 120 characters or fewer.';
+                        break;
+                    }
+                }
+                $result = upsertWarehouse($mysqli, $code, $name ?: null);
+                if ($result['id'] <= 0) {
+                    $errors[] = 'Unable to save warehouse. Please try again.';
+                    break;
+                }
+                $messages[] = $result['created'] ? 'Warehouse created.' : 'Warehouse updated.';
                 break;
         }
     }
@@ -168,6 +184,9 @@ $defaults = $config['defaults'];
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" data-section="imports" type="button">Data Import</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-section="warehouses" type="button">Warehouses</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" data-section="parameters" type="button">Parameters</button>
@@ -276,9 +295,9 @@ $defaults = $config['defaults'];
             </div>
         </section>
 
-        <section id="section-parameters" class="d-none">
+        <section id="section-warehouses" class="d-none">
             <div class="row g-4">
-                <div class="col-xl-4">
+                <div class="col-lg-4">
                     <div class="card shadow-sm h-100">
                         <div class="card-header">
                             <h5 class="mb-0">Add Warehouse</h5>
@@ -288,18 +307,67 @@ $defaults = $config['defaults'];
                                 <input type="hidden" name="action" value="add_warehouse">
                                 <div class="mb-3">
                                     <label class="form-label" for="warehouse_code">Code</label>
-                                    <input class="form-control" type="text" id="warehouse_code" name="warehouse_code" required>
+                                    <input class="form-control" type="text" id="warehouse_code" name="warehouse_code" maxlength="50" required>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label" for="warehouse_name">Name</label>
-                                    <input class="form-control" type="text" id="warehouse_name" name="warehouse_name" placeholder="Optional">
+                                    <input class="form-control" type="text" id="warehouse_name" name="warehouse_name" maxlength="120" placeholder="Optional">
                                 </div>
+                                <p class="form-text">Codes must be unique. Warehouses are also created automatically during CSV imports.</p>
                                 <button class="btn btn-primary" type="submit">Save Warehouse</button>
                             </form>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-8">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">Existing Warehouses</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Name</th>
+                                            <th>Created</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($warehouses as $warehouse):
+                                            $createdLabel = '—';
+                                            if (!empty($warehouse['created_at'])) {
+                                                try {
+                                                    $createdLabel = (new \DateTimeImmutable($warehouse['created_at']))->format('Y-m-d H:i');
+                                                } catch (\Exception $e) {
+                                                    $createdLabel = $warehouse['created_at'];
+                                                }
+                                            }
+                                        ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
+                                            <td><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
+                                            <td><?= htmlspecialchars($createdLabel, ENT_QUOTES) ?></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                        <?php if (empty($warehouses)): ?>
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-3">No warehouses yet.</td>
+                                        </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-parameters" class="d-none">
+            <div class="row g-4">
+                <div class="col-12 col-xl-8 col-xxl-7">
                     <div class="card shadow-sm h-100">
                         <div class="card-header">
                             <h5 class="mb-0">Edit Parameters</h5>
