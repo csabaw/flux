@@ -377,27 +377,14 @@ function resolveParameters(
 
 function calculateDashboardData(mysqli $mysqli, array $config, array $filters = []): array
 {
-    $warehouseId = isset($filters['warehouse_id']) && $filters['warehouse_id'] !== ''
-        ? (int) $filters['warehouse_id']
-        : null;
-    $sku = isset($filters['sku']) && $filters['sku'] !== ''
-        ? (string) $filters['sku']
-        : null;
-
-    $tsvShort = isset($filters['tsv_short']) ? max(1, (int) $filters['tsv_short']) : 7;
-    $tsvLong = isset($filters['tsv_long']) ? max($tsvShort, (int) $filters['tsv_long']) : max(30, $tsvShort);
-    if ($tsvLong < $tsvShort) {
-        $tsvLong = $tsvShort;
-    }
-    $ewmaSpan = isset($filters['ewma_span']) ? max(1, (int) $filters['ewma_span']) : 14;
-
-    $lookbackDays = max($config['lookback_days'], $tsvLong + $ewmaSpan);
+    $warehouseId = isset($filters['warehouse_id']) ? (int) $filters['warehouse_id'] : null;
+    $sku = $filters['sku'] ?? null;
 
     $warehouses = getWarehouses($mysqli);
     $warehouseParams = getWarehouseParameters($mysqli);
     $skuParams = getSkuParameters($mysqli);
     $stockMap = getLatestStock($mysqli, $warehouseId, $sku);
-    $salesMap = getSalesMap($mysqli, $lookbackDays, $warehouseId, $sku);
+    $salesMap = getSalesMap($mysqli, $config['lookback_days'], $warehouseId, $sku);
 
     $comboKeys = [];
     foreach ($stockMap as $wId => $items) {
@@ -412,15 +399,10 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
     }
 
     $today = new \DateTimeImmutable('today');
-    $seriesDates = [];
-    for ($i = $lookbackDays - 1; $i >= 0; $i--) {
-        $seriesDates[] = $today->modify('-' . $i . ' days')->format('Y-m-d');
-    }
-
     $data = [];
     $totalReorder = 0.0;
 
-    foreach ($comboKeys as $combo) {
+    foreach ($comboKeys as $key => $combo) {
         $wId = $combo['warehouse_id'];
         $skuCode = $combo['sku'];
         $warehouse = $warehouses[$wId] ?? null;
@@ -429,38 +411,23 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
         }
 
         $params = resolveParameters($wId, $skuCode, $config['defaults'], $warehouseParams, $skuParams);
+        $maWindow = $params['ma_window_days'];
 
         $salesByDate = $salesMap[$wId][$skuCode] ?? [];
+        $totalQty = 0.0;
         $dailySeries = [];
-        $seriesValues = [];
-        foreach ($seriesDates as $date) {
-            $qty = (float) ($salesByDate[$date] ?? 0.0);
+        for ($i = 0; $i < $maWindow; $i++) {
+            $date = $today->modify('-' . $i . ' days')->format('Y-m-d');
+            $qty = $salesByDate[$date] ?? 0.0;
             $dailySeries[$date] = $qty;
-            $seriesValues[] = $qty;
+            $totalQty += $qty;
         }
-
-        $shortSlice = array_slice($seriesValues, -$tsvShort);
-        $shortDenominator = min($tsvShort, count($shortSlice));
-        $tsvShortAvg = $shortDenominator > 0 ? array_sum($shortSlice) / $shortDenominator : 0.0;
-
-        $longSlice = array_slice($seriesValues, -$tsvLong);
-        $longDenominator = min($tsvLong, count($longSlice));
-        $tsvLongAvg = $longDenominator > 0 ? array_sum($longSlice) / $longDenominator : 0.0;
-
-        $alpha = 2 / ($ewmaSpan + 1);
-        $ewma = null;
-        foreach ($seriesValues as $value) {
-            if ($ewma === null) {
-                $ewma = $value;
-                continue;
-            }
-            $ewma = $alpha * $value + (1 - $alpha) * $ewma;
+        ksort($dailySeries);
+        $movingAverage = $totalQty / max(1, $maWindow);
+        $effectiveAvg = $movingAverage;
+        if ($params['min_avg_daily'] > 0 && $movingAverage < $params['min_avg_daily']) {
+            $effectiveAvg = $params['min_avg_daily'];
         }
-        if ($ewma === null) {
-            $ewma = 0.0;
-        }
-
-        $effectiveAvg = max($ewma, $params['min_avg_daily']);
 
         $stockInfo = $stockMap[$wId][$skuCode] ?? ['quantity' => 0.0, 'snapshot_date' => null];
         $currentStock = (float) $stockInfo['quantity'];
@@ -481,25 +448,22 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
             'sku' => $skuCode,
             'current_stock' => round($currentStock, 2),
             'snapshot_date' => $snapshotDate,
-            'tsv_short' => round($tsvShortAvg, 2),
-            'tsv_long' => round($tsvLongAvg, 2),
-            'ewma' => round($ewma, 2),
+            'moving_average' => round($movingAverage, 2),
+            'effective_avg' => round($effectiveAvg, 2),
             'days_of_cover' => $daysOfCover !== null ? round($daysOfCover, 2) : null,
             'target_stock' => round($targetStock, 2),
             'reorder_qty' => round($reorderQty, 2),
             'safety_stock' => round($params['safety_stock'], 2),
             'days_to_cover' => $params['days_to_cover'],
+            'ma_window_days' => $params['ma_window_days'],
             'min_avg_daily' => $params['min_avg_daily'],
-            'ewma_span' => $ewmaSpan,
-            'tsv_short_days' => $tsvShort,
-            'tsv_long_days' => $tsvLong,
             'daily_series' => $dailySeries,
         ];
 
         $totalReorder += $reorderQty;
     }
 
-    usort($data, static function ($a, $b) {
+    usort($data, function ($a, $b) {
         return strcmp($a['warehouse_code'], $b['warehouse_code']) ?: strcmp($a['sku'], $b['sku']);
     });
 
@@ -508,10 +472,6 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
         'summary' => [
             'total_items' => count($data),
             'total_reorder_qty' => round($totalReorder, 2),
-            'tsv_short_days' => $tsvShort,
-            'tsv_long_days' => $tsvLong,
-            'ewma_span' => $ewmaSpan,
-            'lookback_days' => $lookbackDays,
         ],
     ];
 }
