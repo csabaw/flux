@@ -491,7 +491,6 @@ if ($salesPreview || $stockPreview) {
                                             <th>Moving Avg</th>
                                             <th>Days of Cover</th>
                                             <th>Reorder Qty</th>
-                                            <th>Safety Days</th>
                                             <th class="d-none">Key</th>
                                         </tr>
                                     </thead>
@@ -926,7 +925,6 @@ if ($salesPreview || $stockPreview) {
                                             <th>Days to Cover</th>
                                             <th>MA Window</th>
                                             <th>Min Avg</th>
-                                            <th>Safety Days</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -938,12 +936,11 @@ if ($salesPreview || $stockPreview) {
                                             <td><?= (int) $params['days_to_cover'] ?></td>
                                             <td><?= (int) $params['ma_window_days'] ?></td>
                                             <td><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
-                                            <td><?= htmlspecialchars(number_format((float) $params['safety_days'], 2), ENT_QUOTES) ?></td>
                                         </tr>
                                         <?php endforeach; ?>
                                         <?php if (empty($warehouses)): ?>
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted py-3">No warehouses yet.</td>
+                                            <td colspan="4" class="text-center text-muted py-3">No warehouses yet.</td>
                                         </tr>
                                         <?php endif; ?>
                                     </tbody>
@@ -1065,7 +1062,6 @@ if ($salesPreview || $stockPreview) {
                         row.moving_average,
                         row.days_of_cover,
                         row.reorder_qty,
-                        row.safety_days,
                         key,
                     ]);
                 });
@@ -1118,7 +1114,7 @@ if ($salesPreview || $stockPreview) {
                 $('#demandTable tbody').off('click').on('click', 'tr', function () {
                     const data = demandTable.row(this).data();
                     if (!data) return;
-                    const key = data[7];
+                    const key = data[6];
                     const detail = currentRowsMap.get(key);
                     if (!detail) return;
                     renderTrendSeries(detail);
@@ -1201,7 +1197,7 @@ if ($salesPreview || $stockPreview) {
             order: [[5, 'desc']],
             columnDefs: [
                 {
-                    targets: [2, 5, 6],
+                    targets: [2, 5],
                     render: function (data) {
                         if (data === null || data === '') {
                             return '0';
@@ -1240,7 +1236,7 @@ if ($salesPreview || $stockPreview) {
                     },
                 },
                 {
-                    targets: 7,
+                    targets: 6,
                     visible: false,
                     searchable: false,
                 },
