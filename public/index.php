@@ -311,7 +311,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'days_to_cover' => $_POST['days_to_cover'] ?? 0,
                     'ma_window_days' => $_POST['ma_window_days'] ?? 0,
                     'min_avg_daily' => $_POST['min_avg_daily'] ?? 0,
-                    'safety_stock' => $_POST['safety_stock'] ?? 0,
+                    'safety_days' => $_POST['safety_days'] ?? 0,
                 ];
                 if (saveParameters($mysqli, $warehouseId, $values, $sku ?: null)) {
                     $messages[] = $sku !== '' ? 'SKU override saved.' : 'Warehouse parameters saved.';
@@ -493,7 +493,7 @@ if ($salesPreview || $stockPreview) {
                                             <th>Days of Cover</th>
                                             <th>Target Stock</th>
                                             <th>Reorder Qty</th>
-                                            <th>Safety Stock</th>
+                                            <th>Safety Days</th>
                                             <th class="d-none">Key</th>
                                         </tr>
                                     </thead>
@@ -901,8 +901,8 @@ if ($salesPreview || $stockPreview) {
                                     <input class="form-control" type="number" step="0.01" min="0" id="paramMinAvg" name="min_avg_daily" value="<?= htmlspecialchars((string) $defaults['min_avg_daily'], ENT_QUOTES) ?>" required>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label" for="paramSafety">Safety Stock</label>
-                                    <input class="form-control" type="number" step="0.01" min="0" id="paramSafety" name="safety_stock" value="<?= htmlspecialchars((string) $defaults['safety_stock'], ENT_QUOTES) ?>" required>
+                                    <label class="form-label" for="paramSafety">Safety Days</label>
+                                    <input class="form-control" type="number" step="0.01" min="0" id="paramSafety" name="safety_days" value="<?= htmlspecialchars((string) $defaults['safety_days'], ENT_QUOTES) ?>" required>
                                 </div>
                                 <div class="col-12">
                                     <button class="btn btn-primary" type="submit">Save Parameters</button>
@@ -928,7 +928,7 @@ if ($salesPreview || $stockPreview) {
                                             <th>Days to Cover</th>
                                             <th>MA Window</th>
                                             <th>Min Avg</th>
-                                            <th>Safety</th>
+                                            <th>Safety Days</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -940,7 +940,7 @@ if ($salesPreview || $stockPreview) {
                                             <td><?= (int) $params['days_to_cover'] ?></td>
                                             <td><?= (int) $params['ma_window_days'] ?></td>
                                             <td><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
-                                            <td><?= htmlspecialchars(number_format((float) $params['safety_stock'], 2), ENT_QUOTES) ?></td>
+                                            <td><?= htmlspecialchars(number_format((float) $params['safety_days'], 2), ENT_QUOTES) ?></td>
                                         </tr>
                                         <?php endforeach; ?>
                                         <?php if (empty($warehouses)): ?>
@@ -969,7 +969,7 @@ if ($salesPreview || $stockPreview) {
                                             <th>Days to Cover</th>
                                             <th>MA Window</th>
                                             <th>Min Avg</th>
-                                            <th>Safety</th>
+                                            <th>Safety Days</th>
                                             <th></th>
                                         </tr>
                                     </thead>
@@ -987,7 +987,7 @@ if ($salesPreview || $stockPreview) {
                                                         <td><?= (int) $params['days_to_cover'] ?></td>
                                                         <td><?= (int) $params['ma_window_days'] ?></td>
                                                         <td><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
-                                                        <td><?= htmlspecialchars(number_format((float) $params['safety_stock'], 2), ENT_QUOTES) ?></td>
+                                                        <td><?= htmlspecialchars(number_format((float) $params['safety_days'], 2), ENT_QUOTES) ?></td>
                                                         <td>
                                                             <form method="post" class="d-inline">
                                                                 <input type="hidden" name="action" value="delete_sku_param">
@@ -1069,7 +1069,7 @@ if ($salesPreview || $stockPreview) {
                         row.days_of_cover,
                         row.target_stock,
                         row.reorder_qty,
-                        row.safety_stock,
+                        row.safety_days,
                         key,
                     ]);
                 });
