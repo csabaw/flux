@@ -8,7 +8,7 @@ declare(strict_types=1);
 function getWarehouses(mysqli $mysqli): array
 {
     $warehouses = [];
-    $result = $mysqli->query('SELECT id, code, name FROM warehouses ORDER BY name');
+    $result = $mysqli->query('SELECT id, code, name, created_at FROM warehouses ORDER BY name');
     if ($result) {
         while ($row = $result->fetch_assoc()) {
             $warehouses[(int) $row['id']] = $row;
@@ -258,32 +258,45 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
     ];
 }
 
-function upsertWarehouse(mysqli $mysqli, string $code, ?string $name = null): int
+/**
+ * Insert or update a warehouse record.
+ *
+ * @return array{id:int, created:bool}
+ */
+function upsertWarehouse(mysqli $mysqli, string $code, ?string $name = null): array
 {
     $code = trim($code);
     $name = $name !== null && $name !== '' ? trim($name) : $code;
-    $stmt = $mysqli->prepare('SELECT id FROM warehouses WHERE code = ?');
+    $stmt = $mysqli->prepare('SELECT id, name FROM warehouses WHERE code = ?');
+    if (!$stmt) {
+        return ['id' => 0, 'created' => false];
+    }
     $stmt->bind_param('s', $code);
     $stmt->execute();
-    $stmt->bind_result($id);
+    $stmt->bind_result($id, $existingName);
     if ($stmt->fetch()) {
         $stmt->close();
-        if ($name) {
+        if ($name && $name !== $existingName) {
             $update = $mysqli->prepare('UPDATE warehouses SET name = ? WHERE id = ?');
-            $update->bind_param('si', $name, $id);
-            $update->execute();
-            $update->close();
+            if ($update) {
+                $update->bind_param('si', $name, $id);
+                $update->execute();
+                $update->close();
+            }
         }
-        return (int) $id;
+        return ['id' => (int) $id, 'created' => false];
     }
     $stmt->close();
 
     $insert = $mysqli->prepare('INSERT INTO warehouses (code, name) VALUES (?, ?)');
+    if (!$insert) {
+        return ['id' => 0, 'created' => false];
+    }
     $insert->bind_param('ss', $code, $name);
     $insert->execute();
     $newId = $insert->insert_id;
     $insert->close();
-    return (int) $newId;
+    return ['id' => (int) $newId, 'created' => true];
 }
 
 function importSalesCsv(mysqli $mysqli, string $filePath): array
@@ -335,7 +348,11 @@ function importSalesCsv(mysqli $mysqli, string $filePath): array
             continue;
         }
         $saleDate = $date->format('Y-m-d');
-        $warehouseId = upsertWarehouse($mysqli, $warehouseCode);
+        $warehouseResult = upsertWarehouse($mysqli, $warehouseCode);
+        $warehouseId = $warehouseResult['id'];
+        if ($warehouseId <= 0) {
+            continue;
+        }
         $insert->execute();
         $rowCount++;
     }
@@ -395,7 +412,11 @@ function importStockCsv(mysqli $mysqli, string $filePath): array
             continue;
         }
         $snapshotDate = $date->format('Y-m-d');
-        $warehouseId = upsertWarehouse($mysqli, $warehouseCode);
+        $warehouseResult = upsertWarehouse($mysqli, $warehouseCode);
+        $warehouseId = $warehouseResult['id'];
+        if ($warehouseId <= 0) {
+            continue;
+        }
         $insert->execute();
         $rowCount++;
     }
