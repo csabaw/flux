@@ -1,0 +1,4 @@
+.env
+storage/uploads/
+/vendor/
+.DS_Store
