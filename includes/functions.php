@@ -495,26 +495,32 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
             $daysOfCover = $currentStock / $effectiveAvg;
         }
 
+        $roundedStock = (int) round($currentStock);
+        $roundedDaysOfCover = $daysOfCover !== null ? (int) round($daysOfCover) : null;
+        $roundedTargetStock = (int) round($targetStock);
+        $roundedReorderQty = (int) round($reorderQty);
+        $roundedSafetyDays = (int) round($params['safety_days']);
+
         $data[] = [
             'warehouse_id' => $wId,
             'warehouse_code' => $warehouse['code'],
             'warehouse_name' => $warehouse['name'],
             'sku' => $skuCode,
-            'current_stock' => round($currentStock, 2),
+            'current_stock' => $roundedStock,
             'snapshot_date' => $snapshotDate,
             'moving_average' => round($movingAverage, 2),
             'effective_avg' => round($effectiveAvg, 2),
-            'days_of_cover' => $daysOfCover !== null ? round($daysOfCover, 2) : null,
-            'target_stock' => round($targetStock, 2),
-            'reorder_qty' => round($reorderQty, 2),
-            'safety_days' => round($params['safety_days'], 2),
+            'days_of_cover' => $roundedDaysOfCover,
+            'target_stock' => $roundedTargetStock,
+            'reorder_qty' => $roundedReorderQty,
+            'safety_days' => $roundedSafetyDays,
             'days_to_cover' => $params['days_to_cover'],
             'ma_window_days' => $params['ma_window_days'],
             'min_avg_daily' => $params['min_avg_daily'],
             'daily_series' => $dailySeries,
         ];
 
-        $totalReorder += $reorderQty;
+        $totalReorder += $roundedReorderQty;
     }
 
     usort($data, function ($a, $b) {
@@ -525,7 +531,7 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
         'data' => $data,
         'summary' => [
             'total_items' => count($data),
-            'total_reorder_qty' => round($totalReorder, 2),
+            'total_reorder_qty' => (int) round($totalReorder),
         ],
     ];
 }
