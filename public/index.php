@@ -89,6 +89,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 $messages = [];
 $errors = [];
+$lastAction = $_POST['action'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -364,6 +365,28 @@ $salesPreview = getUploadPreview('sales');
 $stockPreview = getUploadPreview('stock');
 $defaults = $config['defaults'];
 
+$activeSection = 'dashboard';
+$importActions = [
+    'preview_sales',
+    'confirm_sales',
+    'cancel_sales_preview',
+    'preview_stock',
+    'confirm_stock',
+    'cancel_stock_preview',
+];
+$warehouseActions = ['add_warehouse'];
+$parameterActions = ['save_parameters', 'delete_sku_param'];
+
+if ($salesPreview || $stockPreview) {
+    $activeSection = 'imports';
+} elseif (in_array($lastAction, $importActions, true)) {
+    $activeSection = 'imports';
+} elseif (in_array($lastAction, $warehouseActions, true)) {
+    $activeSection = 'warehouses';
+} elseif (in_array($lastAction, $parameterActions, true)) {
+    $activeSection = 'parameters';
+}
+
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -424,20 +447,20 @@ $defaults = $config['defaults'];
     <?php else: ?>
         <ul class="nav nav-pills mb-4" id="dashboardTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" data-section="dashboard" type="button">Dashboard</button>
+                <button class="nav-link<?= $activeSection === 'dashboard' ? ' active' : '' ?>" data-section="dashboard" type="button">Dashboard</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" data-section="imports" type="button">Data Import</button>
+                <button class="nav-link<?= $activeSection === 'imports' ? ' active' : '' ?>" data-section="imports" type="button">Data Import</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" data-section="warehouses" type="button">Warehouses</button>
+                <button class="nav-link<?= $activeSection === 'warehouses' ? ' active' : '' ?>" data-section="warehouses" type="button">Warehouses</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" data-section="parameters" type="button">Parameters</button>
+                <button class="nav-link<?= $activeSection === 'parameters' ? ' active' : '' ?>" data-section="parameters" type="button">Parameters</button>
             </li>
         </ul>
 
-        <section id="section-dashboard">
+        <section id="section-dashboard"<?= $activeSection === 'dashboard' ? '' : ' class="d-none"' ?>>
             <div class="row g-4">
                 <div class="col-lg-8">
                     <div class="card shadow-sm h-100">
@@ -500,7 +523,7 @@ $defaults = $config['defaults'];
             </div>
         </section>
 
-        <section id="section-imports" class="d-none">
+        <section id="section-imports"<?= $activeSection === 'imports' ? '' : ' class="d-none"' ?>>
             <div class="row g-4">
                 <div class="col-lg-6">
                     <div class="card shadow-sm h-100">
@@ -764,7 +787,7 @@ $defaults = $config['defaults'];
             </div>
         </section>
 
-        <section id="section-warehouses" class="d-none">
+        <section id="section-warehouses"<?= $activeSection === 'warehouses' ? '' : ' class="d-none"' ?>>
             <div class="row g-4">
                 <div class="col-lg-4">
                     <div class="card shadow-sm h-100">
@@ -834,7 +857,7 @@ $defaults = $config['defaults'];
             </div>
         </section>
 
-        <section id="section-parameters" class="d-none">
+        <section id="section-parameters"<?= $activeSection === 'parameters' ? '' : ' class="d-none"' ?>>
             <div class="row g-4">
                 <div class="col-12 col-xl-8 col-xxl-7">
                     <div class="card shadow-sm h-100">
