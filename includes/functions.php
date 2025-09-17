@@ -18,10 +18,59 @@ function getWarehouses(mysqli $mysqli): array
     return $warehouses;
 }
 
+/**
+ * Determine whether a column exists on a given table.
+ */
+function tableColumnExists(mysqli $mysqli, string $table, string $column): bool
+{
+    $tableName = str_replace('`', '``', $table);
+    $columnName = $mysqli->real_escape_string($column);
+    $sql = "SHOW COLUMNS FROM `{$tableName}` LIKE '{$columnName}'";
+    if ($result = $mysqli->query($sql)) {
+        $exists = $result->num_rows > 0;
+        $result->free();
+        return $exists;
+    }
+
+    return false;
+}
+
+/**
+ * Resolve the name of the safety buffer column, upgrading the table if possible.
+ */
+function resolveSafetyColumn(mysqli $mysqli, string $table): string
+{
+    static $resolved = [];
+    if (isset($resolved[$table])) {
+        return $resolved[$table];
+    }
+
+    $tableName = str_replace('`', '``', $table);
+
+    if (!tableColumnExists($mysqli, $table, 'safety_days')) {
+        if (tableColumnExists($mysqli, $table, 'safety_stock')) {
+            $sql = "ALTER TABLE `{$tableName}` CHANGE `safety_stock` `safety_days` DECIMAL(12, 3) NOT NULL";
+            $mysqli->query($sql);
+        } else {
+            $sql = "ALTER TABLE `{$tableName}` ADD COLUMN `safety_days` DECIMAL(12, 3) NOT NULL DEFAULT 0";
+            $mysqli->query($sql);
+        }
+    }
+
+    $safetyColumn = tableColumnExists($mysqli, $table, 'safety_days') ? 'safety_days' : 'safety_stock';
+    $resolved[$table] = $safetyColumn;
+    return $safetyColumn;
+}
+
 function getWarehouseParameters(mysqli $mysqli): array
 {
     $params = [];
-    $sql = 'SELECT warehouse_id, days_to_cover, ma_window_days, min_avg_daily, safety_days FROM warehouse_parameters';
+
+    $safetyColumn = resolveSafetyColumn($mysqli, 'warehouse_parameters');
+    $columnSql = '`' . str_replace('`', '``', $safetyColumn) . '`';
+    $sql = 'SELECT warehouse_id, days_to_cover, ma_window_days, min_avg_daily, '
+        . $columnSql . ' AS safety_days FROM warehouse_parameters';
+
     if ($result = $mysqli->query($sql)) {
         while ($row = $result->fetch_assoc()) {
             $warehouseId = (int) $row['warehouse_id'];
@@ -40,7 +89,12 @@ function getWarehouseParameters(mysqli $mysqli): array
 function getSkuParameters(mysqli $mysqli): array
 {
     $params = [];
-    $sql = 'SELECT warehouse_id, sku, days_to_cover, ma_window_days, min_avg_daily, safety_days FROM sku_parameters';
+
+    $safetyColumn = resolveSafetyColumn($mysqli, 'sku_parameters');
+    $columnSql = '`' . str_replace('`', '``', $safetyColumn) . '`';
+    $sql = 'SELECT warehouse_id, sku, days_to_cover, ma_window_days, min_avg_daily, '
+        . $columnSql . ' AS safety_days FROM sku_parameters';
+
     if ($result = $mysqli->query($sql)) {
         while ($row = $result->fetch_assoc()) {
             $warehouseId = (int) $row['warehouse_id'];
@@ -783,20 +837,28 @@ function saveParameters(mysqli $mysqli, int $warehouseId, array $values, ?string
     $safety = max(0.0, (float) $values['safety_days']);
 
     if ($sku === null || $sku === '') {
-        $sql = 'INSERT INTO warehouse_parameters (warehouse_id, days_to_cover, ma_window_days, min_avg_daily, safety_days) '
+
+        $column = resolveSafetyColumn($mysqli, 'warehouse_parameters');
+        $columnSql = '`' . str_replace('`', '``', $column) . '`';
+        $sql = 'INSERT INTO warehouse_parameters (warehouse_id, days_to_cover, ma_window_days, min_avg_daily, ' . $columnSql . ') '
             . 'VALUES (?, ?, ?, ?, ?) '
             . 'ON DUPLICATE KEY UPDATE days_to_cover = VALUES(days_to_cover), ma_window_days = VALUES(ma_window_days), '
-            . 'min_avg_daily = VALUES(min_avg_daily), safety_days = VALUES(safety_days)';
+            . 'min_avg_daily = VALUES(min_avg_daily), ' . $columnSql . ' = VALUES(' . $columnSql . ')';
+
         $stmt = $mysqli->prepare($sql);
         if (!$stmt) {
             return false;
         }
         $stmt->bind_param('iiidd', $warehouseId, $days, $ma, $min, $safety);
     } else {
-        $sql = 'INSERT INTO sku_parameters (warehouse_id, sku, days_to_cover, ma_window_days, min_avg_daily, safety_days) '
+
+        $column = resolveSafetyColumn($mysqli, 'sku_parameters');
+        $columnSql = '`' . str_replace('`', '``', $column) . '`';
+        $sql = 'INSERT INTO sku_parameters (warehouse_id, sku, days_to_cover, ma_window_days, min_avg_daily, ' . $columnSql . ') '
             . 'VALUES (?, ?, ?, ?, ?, ?) '
             . 'ON DUPLICATE KEY UPDATE days_to_cover = VALUES(days_to_cover), ma_window_days = VALUES(ma_window_days), '
-            . 'min_avg_daily = VALUES(min_avg_daily), safety_days = VALUES(safety_days)';
+            . 'min_avg_daily = VALUES(min_avg_daily), ' . $columnSql . ' = VALUES(' . $columnSql . ')';
+
         $stmt = $mysqli->prepare($sql);
         if (!$stmt) {
             return false;
