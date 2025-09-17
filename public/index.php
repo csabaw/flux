@@ -412,7 +412,7 @@ if ($salesPreview || $stockPreview) {
         <?php endif; ?>
     </div>
 </nav>
-<div class="container my-4">
+<div class="container-fluid my-4 px-4">
     <?php foreach ($messages as $message): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <?= htmlspecialchars($message, ENT_QUOTES) ?>
@@ -465,8 +465,8 @@ if ($salesPreview || $stockPreview) {
         </ul>
 
         <section id="section-dashboard"<?= $activeSection === 'dashboard' ? '' : ' class="d-none"' ?>>
-            <div class="row g-4">
-                <div class="col-lg-8">
+            <div class="row g-4 mb-4">
+                <div class="col-12">
                     <div class="card shadow-sm h-100">
                         <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
                             <h5 class="mb-0">Demand &amp; Replenishment</h5>
@@ -503,8 +503,10 @@ if ($salesPreview || $stockPreview) {
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4">
-                    <div class="card shadow-sm mb-4">
+            </div>
+            <div class="row g-4 align-items-stretch">
+                <div class="col-lg-4 col-xl-3">
+                    <div class="card shadow-sm h-100">
                         <div class="card-header">
                             <h5 class="mb-0">Summary</h5>
                         </div>
@@ -514,7 +516,9 @@ if ($salesPreview || $stockPreview) {
                             <canvas id="reorderChart" height="220"></canvas>
                         </div>
                     </div>
-                    <div class="card shadow-sm">
+                </div>
+                <div class="col-lg-8 col-xl-9">
+                    <div class="card shadow-sm h-100">
                         <div class="card-header">
                             <h5 class="mb-0">Rolling Demand (Last Window)</h5>
                         </div>
