@@ -52,7 +52,7 @@ $config = [
         'days_to_cover' => (int) env('DEFAULT_DAYS_TO_COVER', 14),
         'ma_window_days' => (int) env('DEFAULT_MA_WINDOW_DAYS', 7),
         'min_avg_daily' => (float) env('DEFAULT_MIN_AVG_DAILY', 1),
-        'safety_stock' => (float) env('DEFAULT_SAFETY_STOCK', 0),
+        'safety_days' => (float) env('DEFAULT_SAFETY_DAYS', 0),
     ],
     'lookback_days' => (int) env('MAX_LOOKBACK_DAYS', 90),
 ];

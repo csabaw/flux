@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS warehouse_parameters (
     days_to_cover INT NOT NULL,
     ma_window_days INT NOT NULL,
     min_avg_daily DECIMAL(12, 3) NOT NULL,
-    safety_stock DECIMAL(12, 3) NOT NULL,
+    safety_days DECIMAL(12, 3) NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_warehouse_params FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS sku_parameters (
     days_to_cover INT NOT NULL,
     ma_window_days INT NOT NULL,
     min_avg_daily DECIMAL(12, 3) NOT NULL,
-    safety_stock DECIMAL(12, 3) NOT NULL,
+    safety_days DECIMAL(12, 3) NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (warehouse_id, sku),
     CONSTRAINT fk_sku_params_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE

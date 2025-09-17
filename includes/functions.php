@@ -21,7 +21,7 @@ function getWarehouses(mysqli $mysqli): array
 function getWarehouseParameters(mysqli $mysqli): array
 {
     $params = [];
-    $sql = 'SELECT warehouse_id, days_to_cover, ma_window_days, min_avg_daily, safety_stock FROM warehouse_parameters';
+    $sql = 'SELECT warehouse_id, days_to_cover, ma_window_days, min_avg_daily, safety_days FROM warehouse_parameters';
     if ($result = $mysqli->query($sql)) {
         while ($row = $result->fetch_assoc()) {
             $warehouseId = (int) $row['warehouse_id'];
@@ -29,7 +29,7 @@ function getWarehouseParameters(mysqli $mysqli): array
                 'days_to_cover' => (int) $row['days_to_cover'],
                 'ma_window_days' => (int) $row['ma_window_days'],
                 'min_avg_daily' => (float) $row['min_avg_daily'],
-                'safety_stock' => (float) $row['safety_stock'],
+                'safety_days' => (float) $row['safety_days'],
             ];
         }
         $result->free();
@@ -40,7 +40,7 @@ function getWarehouseParameters(mysqli $mysqli): array
 function getSkuParameters(mysqli $mysqli): array
 {
     $params = [];
-    $sql = 'SELECT warehouse_id, sku, days_to_cover, ma_window_days, min_avg_daily, safety_stock FROM sku_parameters';
+    $sql = 'SELECT warehouse_id, sku, days_to_cover, ma_window_days, min_avg_daily, safety_days FROM sku_parameters';
     if ($result = $mysqli->query($sql)) {
         while ($row = $result->fetch_assoc()) {
             $warehouseId = (int) $row['warehouse_id'];
@@ -52,7 +52,7 @@ function getSkuParameters(mysqli $mysqli): array
                 'days_to_cover' => (int) $row['days_to_cover'],
                 'ma_window_days' => (int) $row['ma_window_days'],
                 'min_avg_daily' => (float) $row['min_avg_daily'],
-                'safety_stock' => (float) $row['safety_stock'],
+                'safety_days' => (float) $row['safety_days'],
             ];
         }
         $result->free();
@@ -371,7 +371,7 @@ function resolveParameters(
         'days_to_cover' => (int) ($params['days_to_cover'] ?? $defaults['days_to_cover']),
         'ma_window_days' => max(1, (int) ($params['ma_window_days'] ?? $defaults['ma_window_days'])),
         'min_avg_daily' => max(0.0, (float) ($params['min_avg_daily'] ?? $defaults['min_avg_daily'])),
-        'safety_stock' => max(0.0, (float) ($params['safety_stock'] ?? $defaults['safety_stock'])),
+        'safety_days' => max(0.0, (float) ($params['safety_days'] ?? $defaults['safety_days'])),
     ];
 }
 
@@ -433,7 +433,7 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
         $currentStock = (float) $stockInfo['quantity'];
         $snapshotDate = $stockInfo['snapshot_date'];
 
-        $targetStock = $effectiveAvg * $params['days_to_cover'] + $params['safety_stock'];
+        $targetStock = $effectiveAvg * ($params['days_to_cover'] + $params['safety_days']);
         $reorderQty = max(0.0, $targetStock - $currentStock);
 
         $daysOfCover = null;
@@ -453,7 +453,7 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
             'days_of_cover' => $daysOfCover !== null ? round($daysOfCover, 2) : null,
             'target_stock' => round($targetStock, 2),
             'reorder_qty' => round($reorderQty, 2),
-            'safety_stock' => round($params['safety_stock'], 2),
+            'safety_days' => round($params['safety_days'], 2),
             'days_to_cover' => $params['days_to_cover'],
             'ma_window_days' => $params['ma_window_days'],
             'min_avg_daily' => $params['min_avg_daily'],
@@ -780,23 +780,23 @@ function saveParameters(mysqli $mysqli, int $warehouseId, array $values, ?string
     $days = max(1, (int) $values['days_to_cover']);
     $ma = max(1, (int) $values['ma_window_days']);
     $min = max(0.0, (float) $values['min_avg_daily']);
-    $safety = max(0.0, (float) $values['safety_stock']);
+    $safety = max(0.0, (float) $values['safety_days']);
 
     if ($sku === null || $sku === '') {
-        $sql = 'INSERT INTO warehouse_parameters (warehouse_id, days_to_cover, ma_window_days, min_avg_daily, safety_stock) '
+        $sql = 'INSERT INTO warehouse_parameters (warehouse_id, days_to_cover, ma_window_days, min_avg_daily, safety_days) '
             . 'VALUES (?, ?, ?, ?, ?) '
             . 'ON DUPLICATE KEY UPDATE days_to_cover = VALUES(days_to_cover), ma_window_days = VALUES(ma_window_days), '
-            . 'min_avg_daily = VALUES(min_avg_daily), safety_stock = VALUES(safety_stock)';
+            . 'min_avg_daily = VALUES(min_avg_daily), safety_days = VALUES(safety_days)';
         $stmt = $mysqli->prepare($sql);
         if (!$stmt) {
             return false;
         }
         $stmt->bind_param('iiidd', $warehouseId, $days, $ma, $min, $safety);
     } else {
-        $sql = 'INSERT INTO sku_parameters (warehouse_id, sku, days_to_cover, ma_window_days, min_avg_daily, safety_stock) '
+        $sql = 'INSERT INTO sku_parameters (warehouse_id, sku, days_to_cover, ma_window_days, min_avg_daily, safety_days) '
             . 'VALUES (?, ?, ?, ?, ?, ?) '
             . 'ON DUPLICATE KEY UPDATE days_to_cover = VALUES(days_to_cover), ma_window_days = VALUES(ma_window_days), '
-            . 'min_avg_daily = VALUES(min_avg_daily), safety_stock = VALUES(safety_stock)';
+            . 'min_avg_daily = VALUES(min_avg_daily), safety_days = VALUES(safety_days)';
         $stmt = $mysqli->prepare($sql);
         if (!$stmt) {
             return false;
