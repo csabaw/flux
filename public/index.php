@@ -205,9 +205,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errors[] = 'Please provide a snapshot date.';
                     break;
                 }
+
                 $snapshotDate = normalizeDateString($snapshotInput);
                 if ($snapshotDate === null) {
                     $errors[] = 'Snapshot date could not be recognized. Please use a valid date.';
+
                     break;
                 }
                 if (!isset($_FILES['stock_csv']) || $_FILES['stock_csv']['error'] !== UPLOAD_ERR_OK) {
@@ -232,7 +234,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'header' => $preview['header'],
                     'rows' => $preview['rows'],
                     'filename' => $_FILES['stock_csv']['name'] ?? 'uploaded.csv',
+
                     'snapshot_date' => $snapshotDate,
+
                     'column_map' => [],
                     'uploaded_at' => time(),
                 ]);

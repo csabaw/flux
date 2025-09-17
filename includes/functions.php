@@ -512,12 +512,15 @@ function importSalesCsv(
             if (!is_numeric($quantityValue)) {
                 continue;
             }
+
             $normalizedDate = normalizeDateString($saleDateRaw);
             if ($normalizedDate === null) {
+
                 continue;
             }
             $warehouseIdParam = (int) $warehouseId;
             $skuParam = $skuRaw;
+
             $saleDateParam = $normalizedDate;
             $quantityParam = (float) $quantityValue;
         } else {
@@ -534,11 +537,13 @@ function importSalesCsv(
             if (!is_numeric($quantityValue)) {
                 continue;
             }
+
             $normalizedDate = normalizeDateString($saleDateRaw);
             if ($normalizedDate === null) {
                 continue;
             }
             $saleDateParam = $normalizedDate;
+
             $warehouseResult = upsertWarehouse($mysqli, $warehouseCode);
             $warehouseIdParam = $warehouseResult['id'];
             if ($warehouseIdParam <= 0) {
@@ -578,6 +583,7 @@ function importStockCsv(
     $useMapping = $columnMap !== null && $warehouseId !== null;
     $snapshotOverride = null;
     if ($snapshotDateOverride !== null && $snapshotDateOverride !== '') {
+
         $normalizedOverride = normalizeDateString($snapshotDateOverride);
         if ($normalizedOverride === null) {
             fclose($handle);
@@ -619,6 +625,7 @@ function importStockCsv(
                 return ['success' => false, 'message' => 'Missing required column: ' . $col];
             }
         }
+
         $index = array_flip($columns);
     }
 
@@ -654,11 +661,13 @@ function importStockCsv(
                 if ($snapshotRaw === '') {
                     continue;
                 }
+
                 $normalizedDate = normalizeDateString($snapshotRaw);
                 if ($normalizedDate === null) {
                     continue;
                 }
                 $snapshotDateParam = $normalizedDate;
+
             }
             $warehouseIdParam = (int) $warehouseId;
             $skuParam = $skuRaw;
@@ -677,11 +686,13 @@ function importStockCsv(
             if (!is_numeric($quantityValue)) {
                 continue;
             }
+
             $normalizedDate = normalizeDateString($snapshotRaw);
             if ($normalizedDate === null) {
                 continue;
             }
             $snapshotDateParam = $normalizedDate;
+
             $warehouseResult = upsertWarehouse($mysqli, $warehouseCode);
             $warehouseIdParam = $warehouseResult['id'];
             if ($warehouseIdParam <= 0) {
