@@ -134,6 +134,148 @@ function getSalesMap(mysqli $mysqli, int $lookbackDays, ?int $warehouseId = null
     return $sales;
 }
 
+/**
+ * Normalize a user-provided date string to the canonical Y-m-d format.
+ */
+function normalizeDateString(string $value): ?string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return null;
+    }
+
+    $value = preg_replace('/\b(\d{1,2})(st|nd|rd|th)\b/i', '$1', $value);
+    if (!is_string($value)) {
+        return null;
+    }
+    $value = trim($value);
+    if ($value === '') {
+        return null;
+    }
+
+    $candidates = [];
+    $addCandidate = static function (string $candidate) use (&$candidates): void {
+        $candidate = trim($candidate);
+        if ($candidate === '') {
+            return;
+        }
+        if (!in_array($candidate, $candidates, true)) {
+            $candidates[] = $candidate;
+        }
+    };
+
+    $addCandidate($value);
+
+    $normalizedWhitespace = preg_replace('/\s+/', ' ', $value);
+    if (is_string($normalizedWhitespace)) {
+        $addCandidate($normalizedWhitespace);
+    }
+
+    $separatorVariants = [
+        str_replace(['/', '\\'], '-', $value),
+        str_replace('.', '-', $value),
+        str_replace(',', '', $value),
+    ];
+    foreach ($separatorVariants as $variant) {
+        if (is_string($variant)) {
+            $addCandidate($variant);
+        }
+    }
+
+    $baseFormats = [
+        'Y-m-d', 'Y/m/d', 'Y.m.d', 'Y m d', 'Ymd', 'Y-n-j', 'Y/n/j', 'Y.n.j', 'Y d m', 'Y j n',
+        'd/m/Y', 'j/n/Y', 'd/m/y', 'j/n/y', 'dmY', 'dmy', 'd m Y', 'd m y',
+        'd-m-Y', 'j-n-Y', 'd-m-y', 'j-n-y',
+        'd.m.Y', 'j.n.Y', 'd.m.y', 'j.n.y',
+        'm/d/Y', 'n/j/Y', 'm/d/y', 'n/j/y', 'mdY', 'mdy', 'm d Y', 'm d y',
+        'm-d-Y', 'n-j-Y', 'm-d-y', 'n-j-y',
+        'm.d.Y', 'n.j.Y', 'm.d.y', 'n.j.y',
+        'd M Y', 'j M Y', 'd M y', 'j M y',
+        'M d Y', 'M j Y', 'M d y', 'M j y',
+        'd M, Y', 'j M, Y', 'd M, y', 'j M, y',
+        'M d, Y', 'M j, Y', 'M d, y', 'M j, y',
+        'd F Y', 'j F Y', 'd F y', 'j F y',
+        'F d Y', 'F j Y', 'F d y', 'F j y',
+        'D, d M Y', 'D, j M Y', 'D d M Y', 'D j M Y',
+        'l, d F Y', 'l, j F Y', 'l d F Y', 'l j F Y',
+    ];
+
+    $timeSuffixes = [
+        '',
+        ' H:i',
+        ' H:i:s',
+        ' H:i:s.u',
+        ' H:i:sP',
+        ' H:iP',
+        ' H:i:s.uP',
+        ' H:iO',
+        ' H:i:sO',
+        ' H:i:s.uO',
+        ' g:i A',
+        ' g:i:s A',
+        ' g:i a',
+        ' g:i:s a',
+    ];
+
+    $isoFormats = [
+        '!Y-m-d\TH:i',
+        '!Y-m-d\TH:iP',
+        '!Y-m-d\TH:iO',
+        '!Y-m-d\TH:i:s',
+        '!Y-m-d\TH:i:sP',
+        '!Y-m-d\TH:i:sO',
+        '!Y-m-d\TH:i:s.u',
+        '!Y-m-d\TH:i:s.uP',
+        '!Y-m-d\TH:i:s.uO',
+    ];
+
+    foreach ($candidates as $candidate) {
+        foreach ($baseFormats as $format) {
+            foreach ($timeSuffixes as $suffix) {
+                $fullFormat = '!' . $format . $suffix;
+                $date = \DateTime::createFromFormat($fullFormat, $candidate);
+                if ($date instanceof \DateTime) {
+                    $errors = \DateTime::getLastErrors();
+                    if ($errors === false || (($errors['warning_count'] ?? 0) === 0 && ($errors['error_count'] ?? 0) === 0)) {
+                        return $date->format('Y-m-d');
+                    }
+                }
+            }
+        }
+
+        foreach ($isoFormats as $format) {
+            $date = \DateTime::createFromFormat($format, $candidate);
+            if ($date instanceof \DateTime) {
+                $errors = \DateTime::getLastErrors();
+                if ($errors === false || (($errors['warning_count'] ?? 0) === 0 && ($errors['error_count'] ?? 0) === 0)) {
+                    return $date->format('Y-m-d');
+                }
+            }
+        }
+    }
+
+    foreach ($candidates as $candidate) {
+        $parsed = date_parse($candidate);
+        if (is_array($parsed)
+            && ($parsed['error_count'] ?? 0) === 0
+            && ($parsed['warning_count'] ?? 0) === 0
+            && isset($parsed['year'], $parsed['month'], $parsed['day'])
+            && $parsed['year'] !== false
+            && $parsed['month'] !== false
+            && $parsed['day'] !== false
+        ) {
+            $year = (int) $parsed['year'];
+            $month = (int) $parsed['month'];
+            $day = (int) $parsed['day'];
+            if ($month >= 1 && $month <= 12 && $day >= 1 && $day <= 31) {
+                return sprintf('%04d-%02d-%02d', $year, $month, $day);
+            }
+        }
+    }
+
+    return null;
+}
+
 function resolveParameters(
     int $warehouseId,
     string $sku,
@@ -299,8 +441,12 @@ function upsertWarehouse(mysqli $mysqli, string $code, ?string $name = null): ar
     return ['id' => (int) $newId, 'created' => true];
 }
 
-function importSalesCsv(mysqli $mysqli, string $filePath): array
-{
+function importSalesCsv(
+    mysqli $mysqli,
+    string $filePath,
+    ?int $warehouseId = null,
+    ?array $columnMap = null
+): array {
     $handle = fopen($filePath, 'r');
     if (!$handle) {
         return ['success' => false, 'message' => 'Unable to open uploaded file.'];
@@ -311,47 +457,95 @@ function importSalesCsv(mysqli $mysqli, string $filePath): array
         return ['success' => false, 'message' => 'CSV file is empty.'];
     }
 
-    $columns = array_map('strtolower', $header);
-    $required = ['warehouse_code', 'sku', 'sale_date', 'quantity'];
-    foreach ($required as $col) {
-        if (!in_array($col, $columns, true)) {
-            fclose($handle);
-            return ['success' => false, 'message' => 'Missing required column: ' . $col];
+    $columnCount = count($header);
+    $useMapping = $columnMap !== null && $warehouseId !== null;
+
+    if ($useMapping) {
+        $index = [];
+        foreach (['sale_date', 'sku', 'quantity'] as $field) {
+            if (!isset($columnMap[$field])) {
+                fclose($handle);
+                return ['success' => false, 'message' => 'Please select a column for ' . $field . '.'];
+            }
+            $idx = (int) $columnMap[$field];
+            if ($idx < 0 || $idx >= $columnCount) {
+                fclose($handle);
+                return ['success' => false, 'message' => 'Invalid column selection provided.'];
+            }
+            $index[$field] = $idx;
         }
+    } else {
+        $columns = array_map('strtolower', $header);
+        $required = ['warehouse_code', 'sku', 'sale_date', 'quantity'];
+        foreach ($required as $col) {
+            if (!in_array($col, $columns, true)) {
+                fclose($handle);
+                return ['success' => false, 'message' => 'Missing required column: ' . $col];
+            }
+        }
+        $index = array_flip($columns);
     }
 
-    $index = array_flip($columns);
     $insert = $mysqli->prepare('INSERT INTO sales (warehouse_id, sku, sale_date, quantity) VALUES (?, ?, ?, ?)');
     if (!$insert) {
         fclose($handle);
         return ['success' => false, 'message' => 'Failed to prepare sales insert statement.'];
     }
-    $insert->bind_param('issd', $warehouseId, $sku, $saleDate, $quantity);
+    $warehouseIdParam = $useMapping ? (int) $warehouseId : 0;
+    $skuParam = '';
+    $saleDateParam = '';
+    $quantityParam = 0.0;
+    $insert->bind_param('issd', $warehouseIdParam, $skuParam, $saleDateParam, $quantityParam);
 
     $rowCount = 0;
     while (($row = fgetcsv($handle)) !== false) {
-        if (count($row) !== count($columns)) {
-            continue;
-        }
-        $warehouseCode = trim($row[$index['warehouse_code']]);
-        $sku = trim($row[$index['sku']]);
-        $saleDate = trim($row[$index['sale_date']]);
-        $quantity = (float) $row[$index['quantity']];
-        if ($warehouseCode === '' || $sku === '' || $saleDate === '') {
-            continue;
-        }
-        if (!is_numeric($row[$index['quantity']])) {
-            continue;
-        }
-        $date = \DateTime::createFromFormat('Y-m-d', $saleDate);
-        if (!$date) {
-            continue;
-        }
-        $saleDate = $date->format('Y-m-d');
-        $warehouseResult = upsertWarehouse($mysqli, $warehouseCode);
-        $warehouseId = $warehouseResult['id'];
-        if ($warehouseId <= 0) {
-            continue;
+        if ($useMapping) {
+            $saleDateRaw = $row[$index['sale_date']] ?? '';
+            $skuRaw = $row[$index['sku']] ?? '';
+            $quantityRaw = $row[$index['quantity']] ?? '';
+            $saleDateRaw = is_string($saleDateRaw) ? trim($saleDateRaw) : (string) $saleDateRaw;
+            $skuRaw = is_string($skuRaw) ? trim($skuRaw) : (string) $skuRaw;
+            $quantityValue = is_string($quantityRaw) ? trim($quantityRaw) : (string) $quantityRaw;
+            if ($skuRaw === '' || $saleDateRaw === '' || $quantityValue === '') {
+                continue;
+            }
+            if (!is_numeric($quantityValue)) {
+                continue;
+            }
+            $normalizedDate = normalizeDateString($saleDateRaw);
+            if ($normalizedDate === null) {
+                continue;
+            }
+            $warehouseIdParam = (int) $warehouseId;
+            $skuParam = $skuRaw;
+            $saleDateParam = $normalizedDate;
+            $quantityParam = (float) $quantityValue;
+        } else {
+            if (count($row) !== $columnCount) {
+                continue;
+            }
+            $warehouseCode = trim((string) $row[$index['warehouse_code']]);
+            $skuRaw = trim((string) $row[$index['sku']]);
+            $saleDateRaw = trim((string) $row[$index['sale_date']]);
+            $quantityValue = $row[$index['quantity']];
+            if ($warehouseCode === '' || $skuRaw === '' || $saleDateRaw === '') {
+                continue;
+            }
+            if (!is_numeric($quantityValue)) {
+                continue;
+            }
+            $normalizedDate = normalizeDateString($saleDateRaw);
+            if ($normalizedDate === null) {
+                continue;
+            }
+            $saleDateParam = $normalizedDate;
+            $warehouseResult = upsertWarehouse($mysqli, $warehouseCode);
+            $warehouseIdParam = $warehouseResult['id'];
+            if ($warehouseIdParam <= 0) {
+                continue;
+            }
+            $skuParam = $skuRaw;
+            $quantityParam = (float) $quantityValue;
         }
         $insert->execute();
         $rowCount++;
@@ -363,8 +557,13 @@ function importSalesCsv(mysqli $mysqli, string $filePath): array
     return ['success' => true, 'message' => "Imported {$rowCount} sales rows."];
 }
 
-function importStockCsv(mysqli $mysqli, string $filePath): array
-{
+function importStockCsv(
+    mysqli $mysqli,
+    string $filePath,
+    ?int $warehouseId = null,
+    ?array $columnMap = null,
+    ?string $snapshotDateOverride = null
+): array {
     $handle = fopen($filePath, 'r');
     if (!$handle) {
         return ['success' => false, 'message' => 'Unable to open uploaded file.'];
@@ -375,47 +574,121 @@ function importStockCsv(mysqli $mysqli, string $filePath): array
         return ['success' => false, 'message' => 'CSV file is empty.'];
     }
 
-    $columns = array_map('strtolower', $header);
-    $required = ['warehouse_code', 'sku', 'snapshot_date', 'quantity'];
-    foreach ($required as $col) {
-        if (!in_array($col, $columns, true)) {
+    $columnCount = count($header);
+    $useMapping = $columnMap !== null && $warehouseId !== null;
+    $snapshotOverride = null;
+    if ($snapshotDateOverride !== null && $snapshotDateOverride !== '') {
+        $normalizedOverride = normalizeDateString($snapshotDateOverride);
+        if ($normalizedOverride === null) {
             fclose($handle);
-            return ['success' => false, 'message' => 'Missing required column: ' . $col];
+            return ['success' => false, 'message' => 'Invalid snapshot date provided.'];
         }
+        $snapshotOverride = $normalizedOverride;
     }
 
-    $index = array_flip($columns);
+    if ($useMapping) {
+        $index = [];
+        foreach (['sku', 'quantity'] as $field) {
+            if (!isset($columnMap[$field])) {
+                fclose($handle);
+                return ['success' => false, 'message' => 'Please select a column for ' . $field . '.'];
+            }
+            $idx = (int) $columnMap[$field];
+            if ($idx < 0 || $idx >= $columnCount) {
+                fclose($handle);
+                return ['success' => false, 'message' => 'Invalid column selection provided.'];
+            }
+            $index[$field] = $idx;
+        }
+        if (isset($columnMap['snapshot_date'])) {
+            $idx = (int) $columnMap['snapshot_date'];
+            if ($idx >= 0 && $idx < $columnCount) {
+                $index['snapshot_date'] = $idx;
+            }
+        }
+        if ($snapshotOverride === null && !isset($index['snapshot_date'])) {
+            fclose($handle);
+            return ['success' => false, 'message' => 'Please provide a snapshot date.'];
+        }
+    } else {
+        $columns = array_map('strtolower', $header);
+        $required = ['warehouse_code', 'sku', 'snapshot_date', 'quantity'];
+        foreach ($required as $col) {
+            if (!in_array($col, $columns, true)) {
+                fclose($handle);
+                return ['success' => false, 'message' => 'Missing required column: ' . $col];
+            }
+        }
+        $index = array_flip($columns);
+    }
+
     $insert = $mysqli->prepare('INSERT INTO stock_snapshots (warehouse_id, sku, snapshot_date, quantity) VALUES (?, ?, ?, ?)');
     if (!$insert) {
         fclose($handle);
         return ['success' => false, 'message' => 'Failed to prepare stock insert statement.'];
     }
-    $insert->bind_param('issd', $warehouseId, $sku, $snapshotDate, $quantity);
+    $warehouseIdParam = $useMapping ? (int) $warehouseId : 0;
+    $skuParam = '';
+    $snapshotDateParam = $snapshotOverride ?? '';
+    $quantityParam = 0.0;
+    $insert->bind_param('issd', $warehouseIdParam, $skuParam, $snapshotDateParam, $quantityParam);
 
     $rowCount = 0;
     while (($row = fgetcsv($handle)) !== false) {
-        if (count($row) !== count($columns)) {
-            continue;
-        }
-        $warehouseCode = trim($row[$index['warehouse_code']]);
-        $sku = trim($row[$index['sku']]);
-        $snapshotDate = trim($row[$index['snapshot_date']]);
-        $quantity = (float) $row[$index['quantity']];
-        if ($warehouseCode === '' || $sku === '' || $snapshotDate === '') {
-            continue;
-        }
-        if (!is_numeric($row[$index['quantity']])) {
-            continue;
-        }
-        $date = \DateTime::createFromFormat('Y-m-d', $snapshotDate);
-        if (!$date) {
-            continue;
-        }
-        $snapshotDate = $date->format('Y-m-d');
-        $warehouseResult = upsertWarehouse($mysqli, $warehouseCode);
-        $warehouseId = $warehouseResult['id'];
-        if ($warehouseId <= 0) {
-            continue;
+        if ($useMapping) {
+            $skuRaw = $row[$index['sku']] ?? '';
+            $quantityRaw = $row[$index['quantity']] ?? '';
+            $skuRaw = is_string($skuRaw) ? trim($skuRaw) : (string) $skuRaw;
+            $quantityValue = is_string($quantityRaw) ? trim($quantityRaw) : (string) $quantityRaw;
+            if ($skuRaw === '' || $quantityValue === '') {
+                continue;
+            }
+            if (!is_numeric($quantityValue)) {
+                continue;
+            }
+            if ($snapshotOverride !== null) {
+                $snapshotDateParam = $snapshotOverride;
+            } else {
+                $snapshotRaw = $row[$index['snapshot_date']] ?? '';
+                $snapshotRaw = is_string($snapshotRaw) ? trim($snapshotRaw) : (string) $snapshotRaw;
+                if ($snapshotRaw === '') {
+                    continue;
+                }
+                $normalizedDate = normalizeDateString($snapshotRaw);
+                if ($normalizedDate === null) {
+                    continue;
+                }
+                $snapshotDateParam = $normalizedDate;
+            }
+            $warehouseIdParam = (int) $warehouseId;
+            $skuParam = $skuRaw;
+            $quantityParam = (float) $quantityValue;
+        } else {
+            if (count($row) !== $columnCount) {
+                continue;
+            }
+            $warehouseCode = trim((string) $row[$index['warehouse_code']]);
+            $skuRaw = trim((string) $row[$index['sku']]);
+            $snapshotRaw = trim((string) $row[$index['snapshot_date']]);
+            $quantityValue = $row[$index['quantity']];
+            if ($warehouseCode === '' || $skuRaw === '' || $snapshotRaw === '') {
+                continue;
+            }
+            if (!is_numeric($quantityValue)) {
+                continue;
+            }
+            $normalizedDate = normalizeDateString($snapshotRaw);
+            if ($normalizedDate === null) {
+                continue;
+            }
+            $snapshotDateParam = $normalizedDate;
+            $warehouseResult = upsertWarehouse($mysqli, $warehouseCode);
+            $warehouseIdParam = $warehouseResult['id'];
+            if ($warehouseIdParam <= 0) {
+                continue;
+            }
+            $skuParam = $skuRaw;
+            $quantityParam = (float) $quantityValue;
         }
         $insert->execute();
         $rowCount++;
