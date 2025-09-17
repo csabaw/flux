@@ -926,7 +926,6 @@ if ($salesPreview || $stockPreview) {
                                             <th>Days to Cover</th>
                                             <th>MA Window</th>
                                             <th>Min Avg</th>
-                                            <th>Safety Days</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -938,12 +937,11 @@ if ($salesPreview || $stockPreview) {
                                             <td><?= (int) $params['days_to_cover'] ?></td>
                                             <td><?= (int) $params['ma_window_days'] ?></td>
                                             <td><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
-                                            <td><?= htmlspecialchars(number_format((float) $params['safety_days'], 2), ENT_QUOTES) ?></td>
                                         </tr>
                                         <?php endforeach; ?>
                                         <?php if (empty($warehouses)): ?>
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted py-3">No warehouses yet.</td>
+                                            <td colspan="4" class="text-center text-muted py-3">No warehouses yet.</td>
                                         </tr>
                                         <?php endif; ?>
                                     </tbody>
