@@ -490,7 +490,6 @@ if ($salesPreview || $stockPreview) {
                                             <th>Stock</th>
                                             <th>Moving Avg</th>
                                             <th>Days of Cover</th>
-                                            <th>Target Stock</th>
                                             <th>Reorder Qty</th>
                                             <th>Safety Days</th>
                                             <th class="d-none">Key</th>
@@ -1065,7 +1064,6 @@ if ($salesPreview || $stockPreview) {
                         row.current_stock,
                         row.moving_average,
                         row.days_of_cover,
-                        row.target_stock,
                         row.reorder_qty,
                         row.safety_days,
                         key,
@@ -1074,9 +1072,12 @@ if ($salesPreview || $stockPreview) {
                 demandTable.draw();
 
                 document.getElementById('summaryItems').textContent = rows.length;
-                document.getElementById('summaryReorder').textContent = rows
-                    .reduce((sum, row) => sum + parseFloat(row.reorder_qty), 0)
-                    .toLocaleString('en-GB', { maximumFractionDigits: 2 });
+                const totalReorder = rows.reduce((sum, row) => {
+                    const value = Number(row.reorder_qty);
+                    return Number.isFinite(value) ? sum + value : sum;
+                }, 0);
+                document.getElementById('summaryReorder').textContent = Math.round(totalReorder)
+                    .toLocaleString('en-GB', { maximumFractionDigits: 0 });
 
                 const topRows = [...rows].sort((a, b) => b.reorder_qty - a.reorder_qty).slice(0, 10);
                 const labels = topRows.map((row) => `${row.warehouse_code}-${row.sku}`);
@@ -1117,7 +1118,7 @@ if ($salesPreview || $stockPreview) {
                 $('#demandTable tbody').off('click').on('click', 'tr', function () {
                     const data = demandTable.row(this).data();
                     if (!data) return;
-                    const key = data[8];
+                    const key = data[7];
                     const detail = currentRowsMap.get(key);
                     if (!detail) return;
                     renderTrendSeries(detail);
@@ -1191,33 +1192,55 @@ if ($salesPreview || $stockPreview) {
     }
 
     $(document).ready(function () {
-        const numberRenderer = $.fn.dataTable.render.number(',', '.', 2);
+        const decimalRenderer = $.fn.dataTable.render.number(',', '.', 2);
+        const integerRenderer = $.fn.dataTable.render.number(',', '.', 0);
         demandTable = $('#demandTable').DataTable({
             paging: true,
             searching: false,
             info: false,
-            order: [[6, 'desc']],
+            order: [[5, 'desc']],
             columnDefs: [
                 {
-                    targets: [2, 3, 5, 6, 7],
+                    targets: [2, 5, 6],
                     render: function (data) {
                         if (data === null || data === '') {
-                            return '0.00';
+                            return '0';
                         }
-                        return numberRenderer.display(parseFloat(data));
+                        const numericValue = Number(data);
+                        if (!Number.isFinite(numericValue)) {
+                            return '0';
+                        }
+                        return integerRenderer.display(Math.round(numericValue));
                     },
                 },
                 {
                     targets: 4,
                     render: function (data) {
-                        if (data === null || data === '' || Number.isNaN(parseFloat(data))) {
+                        if (data === null || data === '') {
                             return '—';
                         }
-                        return numberRenderer.display(parseFloat(data));
+                        const numericValue = Number(data);
+                        if (!Number.isFinite(numericValue)) {
+                            return '—';
+                        }
+                        return integerRenderer.display(Math.round(numericValue));
                     },
                 },
                 {
-                    targets: 8,
+                    targets: 3,
+                    render: function (data) {
+                        if (data === null || data === '') {
+                            return '0.00';
+                        }
+                        const numericValue = Number(data);
+                        if (!Number.isFinite(numericValue)) {
+                            return '0.00';
+                        }
+                        return decimalRenderer.display(numericValue);
+                    },
+                },
+                {
+                    targets: 7,
                     visible: false,
                     searchable: false,
                 },
