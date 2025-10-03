@@ -599,12 +599,42 @@ $tabs = [
                                         <table id="demandTable" class="w-full min-w-[960px] table-auto text-sm text-gray-200">
                                             <thead class="bg-white/[0.03] text-xs font-medium uppercase tracking-[0.3em] text-gray-400">
                                                 <tr>
-                                                    <th class="px-6 py-4 text-left text-gray-300">Warehouse</th>
-                                                    <th class="px-6 py-4 text-left text-gray-300">SKU</th>
-                                                    <th class="px-6 py-4 text-left text-gray-300">On-hand</th>
-                                                    <th class="px-6 py-4 text-left text-gray-300">Moving Avg</th>
-                                                    <th class="px-6 py-4 text-left text-gray-300">Days of Cover</th>
-                                                    <th class="px-6 py-4 text-left text-gray-300">Reorder Qty</th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="warehouse">
+                                                            <span>Warehouse</span>
+                                                            <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
+                                                        </button>
+                                                    </th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="sku">
+                                                            <span>SKU</span>
+                                                            <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
+                                                        </button>
+                                                    </th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="onHand">
+                                                            <span>On-hand</span>
+                                                            <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
+                                                        </button>
+                                                    </th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="movingAverage">
+                                                            <span>Moving Avg</span>
+                                                            <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
+                                                        </button>
+                                                    </th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="daysOfCover">
+                                                            <span>Days of Cover</span>
+                                                            <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
+                                                        </button>
+                                                    </th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="reorderQty">
+                                                            <span>Reorder Qty</span>
+                                                            <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
+                                                        </button>
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody class="divide-y divide-white/5 bg-white/[0.01]"></tbody>
@@ -1103,8 +1133,37 @@ $tabs = [
         const INACTIVE_CLASSES = ['text-gray-600', 'hover:bg-primary/10', 'hover:text-primary', 'dark:text-gray-300', 'dark:hover:text-primary'];
         let reorderChart;
         let trendChart;
+        let currentRows = [];
         let currentRowsMap = new Map();
+        let currentSort = { column: null, direction: 'asc' };
         let selectedRowEl = null;
+        let selectedRowKey = null;
+        const SORT_CONFIG = {
+            warehouse: {
+                type: 'string',
+                getValue: (row) => `${row.warehouse_code ?? ''} ${row.warehouse_name ?? ''}`.trim().toLowerCase(),
+            },
+            sku: {
+                type: 'string',
+                getValue: (row) => (row.sku ?? '').toString().toLowerCase(),
+            },
+            onHand: {
+                type: 'number',
+                getValue: (row) => Number(row.current_stock),
+            },
+            movingAverage: {
+                type: 'number',
+                getValue: (row) => Number(row.moving_average),
+            },
+            daysOfCover: {
+                type: 'number',
+                getValue: (row) => normalizeDaysValue(row.days_of_cover),
+            },
+            reorderQty: {
+                type: 'number',
+                getValue: (row) => Number(row.reorder_qty),
+            },
+        };
         const integerFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 
         function setActiveSection(id) {
@@ -1211,11 +1270,14 @@ $tabs = [
                 .then((response) => response.json())
                 .then((payload) => {
                     const rows = payload.data || [];
+                    currentRows = rows.slice();
                     currentRowsMap = new Map();
-                    const tableBody = document.querySelector('#demandTable tbody');
-                    const emptyState = document.getElementById('demandEmptyState');
-                    if (tableBody) {
-                        tableBody.innerHTML = '';
+                    currentRows.forEach((row) => {
+                        const key = `${row.warehouse_id}|${row.sku}`;
+                        currentRowsMap.set(key, row);
+                    });
+                    if (selectedRowKey && !currentRowsMap.has(selectedRowKey)) {
+                        selectedRowKey = null;
                         selectedRowEl = null;
                     }
                     if (emptyState) {
@@ -1344,6 +1406,136 @@ $tabs = [
                 });
         }
 
+        function updateDemandEmptyState(hasRows) {
+            const emptyState = document.getElementById('demandEmptyState');
+            if (emptyState) {
+                emptyState.classList.toggle('hidden', hasRows);
+            }
+        }
+
+        function getSortedRows() {
+            if (!currentSort.column || !SORT_CONFIG[currentSort.column]) {
+                return currentRows.slice();
+            }
+            const config = SORT_CONFIG[currentSort.column];
+            const directionMultiplier = currentSort.direction === 'desc' ? -1 : 1;
+            return currentRows.slice().sort((a, b) => {
+                const aValue = config.getValue(a);
+                const bValue = config.getValue(b);
+
+                if (config.type === 'number') {
+                    const aNumber = Number(aValue);
+                    const bNumber = Number(bValue);
+                    const aValid = Number.isFinite(aNumber);
+                    const bValid = Number.isFinite(bNumber);
+                    if (!aValid && !bValid) return 0;
+                    if (!aValid) return 1;
+                    if (!bValid) return -1;
+                    if (aNumber === bNumber) return 0;
+                    return aNumber > bNumber ? directionMultiplier : -directionMultiplier;
+                }
+
+                const aString = (aValue ?? '').toString();
+                const bString = (bValue ?? '').toString();
+                return aString.localeCompare(bString, undefined, { sensitivity: 'base' }) * directionMultiplier;
+            });
+        }
+
+        function renderDemandTable(rows) {
+            const tableBody = document.querySelector('#demandTable tbody');
+            if (!tableBody) {
+                return;
+            }
+            tableBody.innerHTML = '';
+            let highlightedRow = null;
+            rows.forEach((row) => {
+                const key = `${row.warehouse_id}|${row.sku}`;
+                const tr = document.createElement('tr');
+                tr.dataset.key = key;
+                tr.className = 'group cursor-pointer transition-colors odd:bg-white/[0.01] even:bg-white/[0.02] hover:bg-primary/20 hover:bg-opacity-40';
+
+                const warehouseCell = document.createElement('td');
+                warehouseCell.className = 'px-6 py-4 font-semibold text-white';
+                const warehouseCode = row.warehouse_code ?? '';
+                const warehouseName = row.warehouse_name ?? '';
+                warehouseCell.textContent = warehouseName ? `${warehouseCode} · ${warehouseName}` : warehouseCode;
+                tr.appendChild(warehouseCell);
+
+                const skuCell = document.createElement('td');
+                skuCell.className = 'px-6 py-4 text-gray-300';
+                skuCell.textContent = row.sku ?? '';
+                tr.appendChild(skuCell);
+
+                const stockCell = document.createElement('td');
+                stockCell.className = 'px-6 py-4 text-gray-300';
+                stockCell.textContent = formatInteger(row.current_stock);
+                tr.appendChild(stockCell);
+
+                const maCell = document.createElement('td');
+                maCell.className = 'px-6 py-4 text-gray-300';
+                maCell.textContent = Number(row.moving_average || 0).toFixed(2);
+                tr.appendChild(maCell);
+
+                const coverCell = document.createElement('td');
+                coverCell.className = 'px-6 py-4';
+                coverCell.appendChild(createDaysBadgeElement(row.days_of_cover));
+                tr.appendChild(coverCell);
+
+                const reorderCell = document.createElement('td');
+                reorderCell.className = 'px-6 py-4 text-gray-300';
+                reorderCell.textContent = formatInteger(row.reorder_qty);
+                tr.appendChild(reorderCell);
+
+                if (selectedRowKey && key === selectedRowKey) {
+                    tr.classList.add('ring-2', 'ring-primary/50');
+                    highlightedRow = tr;
+                }
+
+                tableBody.appendChild(tr);
+            });
+            selectedRowEl = highlightedRow;
+        }
+
+        function updateSortIndicators() {
+            const sortButtons = document.querySelectorAll('#demandTable thead .sort-button[data-sort-key]');
+            sortButtons.forEach((button) => {
+                const key = button.dataset.sortKey;
+                const icon = button.querySelector('[data-sort-icon]');
+                if (!icon) return;
+                if (currentSort.column === key) {
+                    icon.textContent = currentSort.direction === 'asc' ? 'arrow_upward' : 'arrow_downward';
+                    icon.classList.remove('opacity-0');
+                    icon.setAttribute('aria-hidden', 'false');
+                } else {
+                    icon.classList.add('opacity-0');
+                    icon.setAttribute('aria-hidden', 'true');
+                }
+            });
+        }
+
+        function toggleSort(columnKey) {
+            if (!SORT_CONFIG[columnKey]) {
+                return;
+            }
+            if (currentSort.column === columnKey) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = columnKey;
+                currentSort.direction = 'asc';
+            }
+            renderDemandTable(getSortedRows());
+            updateSortIndicators();
+        }
+
+        function setupSorting() {
+            const sortButtons = document.querySelectorAll('#demandTable thead .sort-button[data-sort-key]');
+            sortButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    toggleSort(button.dataset.sortKey);
+                });
+            });
+        }
+
         function handleRowClick(event) {
             const tableBodyEl = document.querySelector('#demandTable tbody');
             if (!tableBodyEl) return;
@@ -1356,6 +1548,7 @@ $tabs = [
             }
             selectedRowEl = rowElement;
             selectedRowEl.classList.add('ring-2', 'ring-primary/50');
+            selectedRowKey = rowElement.dataset.key;
             const detail = currentRowsMap.get(rowElement.dataset.key);
             if (detail) {
                 const trendEmpty = document.getElementById('trendEmptyState');
@@ -1448,6 +1641,7 @@ $tabs = [
             dismissAlerts();
             setupColumnCheckboxes();
             setupFilters();
+            setupSorting();
             const tableBodyEl = document.querySelector('#demandTable tbody');
             if (tableBodyEl) {
                 tableBodyEl.addEventListener('click', handleRowClick);
