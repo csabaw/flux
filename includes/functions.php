@@ -117,7 +117,7 @@ function getSkuParameters(mysqli $mysqli): array
 function getLatestStock(mysqli $mysqli, ?int $warehouseId = null, ?string $sku = null): array
 {
     $conditions = [];
-    if ($warehouseId !== null) {
+    if ($warehouseId !== null && $warehouseId > 0) {
         $conditions[] = 'warehouse_id = ' . (int) $warehouseId;
     }
     if ($sku !== null && $sku !== '') {
@@ -163,7 +163,7 @@ function getSalesMap(mysqli $mysqli, int $lookbackDays, ?int $warehouseId = null
     $sql = 'SELECT warehouse_id, sku, sale_date, SUM(quantity) AS quantity '
         . 'FROM sales WHERE sale_date >= ?';
 
-    if ($warehouseId !== null) {
+    if ($warehouseId !== null && $warehouseId > 0) {
         $sql .= ' AND warehouse_id = ?';
         $params[] = $warehouseId;
         $types .= 'i';
@@ -431,7 +431,13 @@ function resolveParameters(
 
 function calculateDashboardData(mysqli $mysqli, array $config, array $filters = []): array
 {
-    $warehouseId = isset($filters['warehouse_id']) ? (int) $filters['warehouse_id'] : null;
+    $warehouseId = null;
+    if (isset($filters['warehouse_id'])) {
+        $candidate = (int) $filters['warehouse_id'];
+        if ($candidate > 0) {
+            $warehouseId = $candidate;
+        }
+    }
     $sku = $filters['sku'] ?? null;
 
     $warehouses = getWarehouses($mysqli);
