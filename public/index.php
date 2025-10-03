@@ -1036,6 +1036,37 @@ if ($salesPreview || $stockPreview) {
     let reorderChart;
     let trendChart;
     let currentRowsMap = new Map();
+    const integerFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
+
+    function normalizeDaysValue(value) {
+        if (value === null || value === undefined) {
+            return null;
+        }
+        if (typeof value === 'string' && value.trim() === '') {
+            return null;
+        }
+        const numericValue = Number(value);
+        if (!Number.isFinite(numericValue)) {
+            return null;
+        }
+        return numericValue;
+    }
+
+    function createDaysBadge(value, normalizedValue) {
+        const numericValue = normalizedValue ?? normalizeDaysValue(value);
+        if (numericValue === null) {
+            return '<span class="badge rounded-pill text-bg-secondary">—</span>';
+        }
+        const rounded = Math.round(numericValue);
+        const label = integerFormatter.format(rounded);
+        if (rounded <= 0) {
+            return `<span class="badge rounded-pill text-bg-danger">${label}</span>`;
+        }
+        if (rounded <= 5) {
+            return `<span class="badge rounded-pill text-bg-warning text-dark">${label}</span>`;
+        }
+        return `<span class="badge rounded-pill text-bg-success">${label}</span>`;
+    }
 
     function refreshDashboard() {
         const warehouseId = document.getElementById('warehouseFilter').value;
@@ -1211,15 +1242,15 @@ if ($salesPreview || $stockPreview) {
                 },
                 {
                     targets: 4,
-                    render: function (data) {
-                        if (data === null || data === '') {
-                            return '—';
+                    render: function (data, type) {
+                        const normalized = normalizeDaysValue(data);
+                        if (type === 'display') {
+                            return createDaysBadge(data, normalized);
                         }
-                        const numericValue = Number(data);
-                        if (!Number.isFinite(numericValue)) {
-                            return '—';
+                        if (type === 'filter') {
+                            return normalized === null ? '' : String(Math.round(normalized));
                         }
-                        return integerRenderer.display(Math.round(numericValue));
+                        return normalized === null ? null : normalized;
                     },
                 },
                 {
