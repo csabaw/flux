@@ -8,7 +8,7 @@ declare(strict_types=1);
 function getWarehouses(mysqli $mysqli): array
 {
     $warehouses = [];
-    $result = $mysqli->query('SELECT id, code, name, created_at FROM warehouses ORDER BY name');
+    $result = $mysqli->query('SELECT id, name, created_at FROM warehouses ORDER BY name');
     if ($result) {
         while ($row = $result->fetch_assoc()) {
             $warehouses[(int) $row['id']] = $row;
@@ -503,7 +503,6 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
 
         $data[] = [
             'warehouse_id' => $wId,
-            'warehouse_code' => $warehouse['code'],
             'warehouse_name' => $warehouse['name'],
             'sku' => $skuCode,
             'current_stock' => $roundedStock,
@@ -524,7 +523,7 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
     }
 
     usort($data, function ($a, $b) {
-        return strcmp($a['warehouse_code'], $b['warehouse_code']) ?: strcmp($a['sku'], $b['sku']);
+        return strcmp($a['warehouse_name'], $b['warehouse_name']) ?: strcmp($a['sku'], $b['sku']);
     });
 
     return [
@@ -541,39 +540,37 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
  *
  * @return array{id:int, created:bool}
  */
-function upsertWarehouse(mysqli $mysqli, string $code, ?string $name = null): array
+function upsertWarehouse(mysqli $mysqli, string $name): array
 {
-    $code = trim($code);
-    $name = $name !== null && $name !== '' ? trim($name) : $code;
-    $stmt = $mysqli->prepare('SELECT id, name FROM warehouses WHERE code = ?');
+    $name = trim($name);
+    if ($name === '') {
+        return ['id' => 0, 'created' => false];
+    }
+
+    $stmt = $mysqli->prepare('SELECT id FROM warehouses WHERE name = ?');
     if (!$stmt) {
         return ['id' => 0, 'created' => false];
     }
-    $stmt->bind_param('s', $code);
+
+    $stmt->bind_param('s', $name);
     $stmt->execute();
-    $stmt->bind_result($id, $existingName);
+    $stmt->bind_result($id);
     if ($stmt->fetch()) {
         $stmt->close();
-        if ($name && $name !== $existingName) {
-            $update = $mysqli->prepare('UPDATE warehouses SET name = ? WHERE id = ?');
-            if ($update) {
-                $update->bind_param('si', $name, $id);
-                $update->execute();
-                $update->close();
-            }
-        }
         return ['id' => (int) $id, 'created' => false];
     }
     $stmt->close();
 
-    $insert = $mysqli->prepare('INSERT INTO warehouses (code, name) VALUES (?, ?)');
+    $insert = $mysqli->prepare('INSERT INTO warehouses (name) VALUES (?)');
     if (!$insert) {
         return ['id' => 0, 'created' => false];
     }
-    $insert->bind_param('ss', $code, $name);
+
+    $insert->bind_param('s', $name);
     $insert->execute();
     $newId = $insert->insert_id;
     $insert->close();
+
     return ['id' => (int) $newId, 'created' => true];
 }
 
@@ -612,7 +609,7 @@ function importSalesCsv(
         }
     } else {
         $columns = array_map('strtolower', $header);
-        $required = ['warehouse_code', 'sku', 'sale_date', 'quantity'];
+        $required = ['warehouse_name', 'sku', 'sale_date', 'quantity'];
         foreach ($required as $col) {
             if (!in_array($col, $columns, true)) {
                 fclose($handle);
@@ -660,11 +657,11 @@ function importSalesCsv(
             if (count($row) !== $columnCount) {
                 continue;
             }
-            $warehouseCode = trim((string) $row[$index['warehouse_code']]);
+            $warehouseName = trim((string) $row[$index['warehouse_name']]);
             $skuRaw = trim((string) $row[$index['sku']]);
             $saleDateRaw = trim((string) $row[$index['sale_date']]);
             $quantityValue = normalizeCsvNumber($row[$index['quantity']] ?? null);
-            if ($warehouseCode === '' || $skuRaw === '' || $saleDateRaw === '' || $quantityValue === null) {
+            if ($warehouseName === '' || $skuRaw === '' || $saleDateRaw === '' || $quantityValue === null) {
                 continue;
             }
 
@@ -674,7 +671,7 @@ function importSalesCsv(
             }
             $saleDateParam = $normalizedDate;
 
-            $warehouseResult = upsertWarehouse($mysqli, $warehouseCode);
+            $warehouseResult = upsertWarehouse($mysqli, $warehouseName);
             $warehouseIdParam = $warehouseResult['id'];
             if ($warehouseIdParam <= 0) {
                 continue;
@@ -748,7 +745,7 @@ function importStockCsv(
         }
     } else {
         $columns = array_map('strtolower', $header);
-        $required = ['warehouse_code', 'sku', 'snapshot_date', 'quantity'];
+        $required = ['warehouse_name', 'sku', 'snapshot_date', 'quantity'];
         foreach ($required as $col) {
             if (!in_array($col, $columns, true)) {
                 fclose($handle);
@@ -803,11 +800,11 @@ function importStockCsv(
             if (count($row) !== $columnCount) {
                 continue;
             }
-            $warehouseCode = trim((string) $row[$index['warehouse_code']]);
+            $warehouseName = trim((string) $row[$index['warehouse_name']]);
             $skuRaw = trim((string) $row[$index['sku']]);
             $snapshotRaw = trim((string) $row[$index['snapshot_date']]);
             $quantityValue = normalizeCsvNumber($row[$index['quantity']] ?? null);
-            if ($warehouseCode === '' || $skuRaw === '' || $snapshotRaw === '' || $quantityValue === null) {
+            if ($warehouseName === '' || $skuRaw === '' || $snapshotRaw === '' || $quantityValue === null) {
                 continue;
             }
 
@@ -817,7 +814,7 @@ function importStockCsv(
             }
             $snapshotDateParam = $normalizedDate;
 
-            $warehouseResult = upsertWarehouse($mysqli, $warehouseCode);
+            $warehouseResult = upsertWarehouse($mysqli, $warehouseName);
             $warehouseIdParam = $warehouseResult['id'];
             if ($warehouseIdParam <= 0) {
                 continue;
