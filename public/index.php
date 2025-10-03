@@ -387,7 +387,7 @@ if ($salesPreview || $stockPreview) {
 $cardClass = "rounded-2xl border border-white/5 bg-[#23262b] p-6 shadow-[0_24px_48px_rgba(8,10,12,0.35)]";
 $inputClass = "mt-1 block w-full rounded-xl border border-white/10 bg-[#1d2026] px-3 py-2 text-sm text-gray-100 shadow-inner transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40";
 $labelClass = "text-sm font-semibold text-gray-300";
-$helperClass = "mt-1 text-xs text-gray-500 dark:text-gray-400";
+$helperClass = "mt-1 text-xs text-gray-600 dark:text-gray-300";
 $buttonPrimaryClass = "inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40";
 $buttonSecondaryClass = "inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-[#1f2227] px-5 py-2 text-sm font-semibold text-gray-200 transition hover:border-primary/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/30";
 $checkboxClass = "h-4 w-4 rounded border-white/30 bg-[#1d2026] text-primary focus:ring-primary/60";
@@ -676,7 +676,7 @@ $tabs = [
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Daily Sales CSV</h3>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Upload a file and map the sale date, SKU, and quantity columns.</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-200">Upload a file and map the sale date, SKU, and quantity columns.</p>
                                     </div>
                                     <?php if ($salesPreview): ?>
                                     <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Preview ready</span>
@@ -699,16 +699,16 @@ $tabs = [
                                         ?>
                                         <div class="grid gap-4 sm:grid-cols-2">
                                             <div>
-                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Warehouse</p>
-                                                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($salesWarehouseLabel, ENT_QUOTES) ?></p>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-200">Warehouse</p>
+                                                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-50"><?= htmlspecialchars($salesWarehouseLabel, ENT_QUOTES) ?></p>
                                             </div>
                                             <div>
-                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">File</p>
-                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300"><?= htmlspecialchars((string) ($salesPreview['filename'] ?? 'uploaded.csv'), ENT_QUOTES) ?></p>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-200">File</p>
+                                                <p class="mt-1 text-sm text-gray-700 dark:text-gray-100"><?= htmlspecialchars((string) ($salesPreview['filename'] ?? 'uploaded.csv'), ENT_QUOTES) ?></p>
                                             </div>
                                             <div>
-                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Rows previewed</p>
-                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300"><?= $salesSampleCount ?></p>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-200">Rows previewed</p>
+                                                <p class="mt-1 text-sm text-gray-700 dark:text-gray-100"><?= $salesSampleCount ?></p>
                                             </div>
                                         </div>
                                         <form method="post" class="space-y-6">
@@ -718,13 +718,13 @@ $tabs = [
                                                     $displayLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column ' . ($index + 1);
                                                 ?>
                                                 <div class="flex flex-col gap-2 rounded-xl border border-white/10 bg-[#1f2227] p-4 text-sm text-gray-200 shadow-lg shadow-black/40">
-                                                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Column <?= $index + 1 ?></p>
-                                                    <p class="truncate font-medium text-gray-900 dark:text-gray-100" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>"><?= htmlspecialchars($displayLabel, ENT_QUOTES) ?></p>
+                                                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-200">Column <?= $index + 1 ?></p>
+                                                    <p class="truncate font-medium text-gray-900 dark:text-gray-50" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>"><?= htmlspecialchars($displayLabel, ENT_QUOTES) ?></p>
                                                     <div class="mt-2 space-y-2">
                                                         <?php foreach ($salesFields as $fieldKey => $fieldLabel):
                                                             $checked = isset($salesColumnMap[$fieldKey]) && (int) $salesColumnMap[$fieldKey] === (int) $index;
                                                         ?>
-                                                        <label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
+                                                        <label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-100">
                                                             <input class="<?= $checkboxClass ?> column-checkbox" type="checkbox" id="sales-<?= $fieldKey ?>-<?= $index ?>" name="column_map[<?= $fieldKey ?>]" value="<?= $index ?>" data-field="<?= $fieldKey ?>" <?= $checked ? 'checked' : '' ?>>
                                                             <span>Use as <?= htmlspecialchars($fieldLabel, ENT_QUOTES) ?></span>
                                                         </label>
@@ -744,34 +744,34 @@ $tabs = [
                                                                 <?php foreach ($salesHeader as $columnLabel):
                                                                     $headerLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column';
                                                                 ?>
-                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-400"><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
+                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.18em] text-gray-200"><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
                                                                 <?php endforeach; ?>
                                                             <?php else: ?>
-                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">Data</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.18em] text-gray-200">Data</th>
                                                             <?php endif; ?>
                                                         </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-white/10">
                                                         <?php if ($salesSampleCount > 0): ?>
                                                             <?php foreach ($salesRows as $row): ?>
-                                                            <tr class="bg-[#1c1f25] text-sm text-gray-200">
+                                                            <tr class="bg-[#1c1f25] text-sm text-gray-100">
                                                                 <?php if ($salesHeaderCount > 0): ?>
                                                                     <?php for ($i = 0; $i < $salesHeaderCount; $i++): ?>
-                                                                    <td class="px-4 py-2"><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
+                                                                    <td class="px-4 py-2 text-gray-100"><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
                                                                     <?php endfor; ?>
                                                                 <?php else: ?>
-                                                                    <td class="px-4 py-2"><?= htmlspecialchars(implode(', ', array_map('strval', $row)), ENT_QUOTES) ?></td>
+                                                                    <td class="px-4 py-2 text-gray-100"><?= htmlspecialchars(implode(', ', array_map('strval', $row)), ENT_QUOTES) ?></td>
                                                                 <?php endif; ?>
                                                             </tr>
                                                             <?php endforeach; ?>
                                                         <?php else: ?>
                                                             <tr>
-                                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No data rows detected.</td>
+                                                                <td class="px-4 py-6 text-center text-gray-600 dark:text-gray-300">No data rows detected.</td>
                                                             </tr>
                                                         <?php endif; ?>
                                                     </tbody>
                                                 </table>
-                                                <p class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">Showing the first <?= $salesSampleCount ?> row<?= $salesSampleCount === 1 ? '' : 's' ?> from the file.</p>
+                                                <p class="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">Showing the first <?= $salesSampleCount ?> row<?= $salesSampleCount === 1 ? '' : 's' ?> from the file.</p>
                                             </div>
                                             <div class="flex flex-wrap items-center gap-3">
                                                 <button class="<?= $buttonPrimaryClass ?>" type="submit">Import Sales</button>
@@ -808,7 +808,7 @@ $tabs = [
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Stock Snapshot CSV</h3>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Provide the latest stock position and map SKU and quantity columns.</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-200">Provide the latest stock position and map SKU and quantity columns.</p>
                                     </div>
                                     <?php if ($stockPreview): ?>
                                     <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Preview ready</span>
@@ -832,20 +832,20 @@ $tabs = [
                                         ?>
                                         <div class="grid gap-4 sm:grid-cols-2">
                                             <div>
-                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Warehouse</p>
-                                                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($stockWarehouseLabel, ENT_QUOTES) ?></p>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-200">Warehouse</p>
+                                                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-50"><?= htmlspecialchars($stockWarehouseLabel, ENT_QUOTES) ?></p>
                                             </div>
                                             <div>
-                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Snapshot date</p>
-                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300"><?= htmlspecialchars($stockSnapshotDate, ENT_QUOTES) ?></p>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-200">Snapshot date</p>
+                                                <p class="mt-1 text-sm text-gray-700 dark:text-gray-100"><?= htmlspecialchars($stockSnapshotDate, ENT_QUOTES) ?></p>
                                             </div>
                                             <div>
-                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">File</p>
-                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300"><?= htmlspecialchars((string) ($stockPreview['filename'] ?? 'uploaded.csv'), ENT_QUOTES) ?></p>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-200">File</p>
+                                                <p class="mt-1 text-sm text-gray-700 dark:text-gray-100"><?= htmlspecialchars((string) ($stockPreview['filename'] ?? 'uploaded.csv'), ENT_QUOTES) ?></p>
                                             </div>
                                             <div>
-                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Rows previewed</p>
-                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300"><?= $stockSampleCount ?></p>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-200">Rows previewed</p>
+                                                <p class="mt-1 text-sm text-gray-700 dark:text-gray-100"><?= $stockSampleCount ?></p>
                                             </div>
                                         </div>
                                         <form method="post" class="space-y-6">
@@ -855,13 +855,13 @@ $tabs = [
                                                     $displayLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column ' . ($index + 1);
                                                 ?>
                                                 <div class="flex flex-col gap-2 rounded-xl border border-white/10 bg-[#1f2227] p-4 text-sm text-gray-200 shadow-lg shadow-black/40">
-                                                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Column <?= $index + 1 ?></p>
-                                                    <p class="truncate font-medium text-gray-900 dark:text-gray-100" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>"><?= htmlspecialchars($displayLabel, ENT_QUOTES) ?></p>
+                                                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-200">Column <?= $index + 1 ?></p>
+                                                    <p class="truncate font-medium text-gray-900 dark:text-gray-50" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>"><?= htmlspecialchars($displayLabel, ENT_QUOTES) ?></p>
                                                     <div class="mt-2 space-y-2">
                                                         <?php foreach ($stockFields as $fieldKey => $fieldLabel):
                                                             $checked = isset($stockColumnMap[$fieldKey]) && (int) $stockColumnMap[$fieldKey] === (int) $index;
                                                         ?>
-                                                        <label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
+                                                        <label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-100">
                                                             <input class="<?= $checkboxClass ?> column-checkbox" type="checkbox" id="stock-<?= $fieldKey ?>-<?= $index ?>" name="column_map[<?= $fieldKey ?>]" value="<?= $index ?>" data-field="<?= $fieldKey ?>" <?= $checked ? 'checked' : '' ?>>
                                                             <span>Use as <?= htmlspecialchars($fieldLabel, ENT_QUOTES) ?></span>
                                                         </label>
@@ -881,34 +881,34 @@ $tabs = [
                                                                 <?php foreach ($stockHeader as $columnLabel):
                                                                     $headerLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column';
                                                                 ?>
-                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-400"><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
+                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.18em] text-gray-200"><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
                                                                 <?php endforeach; ?>
                                                             <?php else: ?>
-                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">Data</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.18em] text-gray-200">Data</th>
                                                             <?php endif; ?>
                                                         </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-white/10">
                                                         <?php if ($stockSampleCount > 0): ?>
                                                             <?php foreach ($stockRows as $row): ?>
-                                                            <tr class="bg-[#1c1f25] text-sm text-gray-200">
+                                                            <tr class="bg-[#1c1f25] text-sm text-gray-100">
                                                                 <?php if ($stockHeaderCount > 0): ?>
                                                                     <?php for ($i = 0; $i < $stockHeaderCount; $i++): ?>
-                                                                    <td class="px-4 py-2"><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
+                                                                    <td class="px-4 py-2 text-gray-100"><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
                                                                     <?php endfor; ?>
                                                                 <?php else: ?>
-                                                                    <td class="px-4 py-2"><?= htmlspecialchars(implode(', ', array_map('strval', $row)), ENT_QUOTES) ?></td>
+                                                                    <td class="px-4 py-2 text-gray-100"><?= htmlspecialchars(implode(', ', array_map('strval', $row)), ENT_QUOTES) ?></td>
                                                                 <?php endif; ?>
                                                             </tr>
                                                             <?php endforeach; ?>
                                                         <?php else: ?>
                                                             <tr>
-                                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No data rows detected.</td>
+                                                                <td class="px-4 py-6 text-center text-gray-600 dark:text-gray-300">No data rows detected.</td>
                                                             </tr>
                                                         <?php endif; ?>
                                                     </tbody>
                                                 </table>
-                                                <p class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">Showing the first <?= $stockSampleCount ?> row<?= $stockSampleCount === 1 ? '' : 's' ?> from the file.</p>
+                                                <p class="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">Showing the first <?= $stockSampleCount ?> row<?= $stockSampleCount === 1 ? '' : 's' ?> from the file.</p>
                                             </div>
                                             <div class="flex flex-wrap items-center gap-3">
                                                 <button class="<?= $buttonPrimaryClass ?>" type="submit">Import Stock</button>
@@ -951,7 +951,7 @@ $tabs = [
                         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
                             <div class="<?= $cardClass ?>">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Add or Update Warehouse</h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Create new warehouses or update existing names.</p>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-200">Create new warehouses or update existing names.</p>
                                 <form method="post" class="mt-6 space-y-4">
                                     <input type="hidden" name="action" value="add_warehouse">
                                     <div>
@@ -965,7 +965,7 @@ $tabs = [
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Existing Warehouses</h3>
                                 <div class="mt-4 overflow-x-auto">
                                     <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
-                                        <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
+                                        <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.18em] text-gray-200">
                                             <tr>
                                                 <th class="px-4 py-3 text-left">Name</th>
                                                 <th class="px-4 py-3 text-left">Created</th>
@@ -982,14 +982,14 @@ $tabs = [
                                                     }
                                                 }
                                             ?>
-                                            <tr class="bg-[#1c1f25] text-sm text-gray-200">
+                                            <tr class="bg-[#1c1f25] text-sm text-gray-100">
                                                 <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
-                                                <td class="px-4 py-2 text-gray-500 dark:text-gray-400"><?= htmlspecialchars($createdLabel, ENT_QUOTES) ?></td>
+                                                <td class="px-4 py-2 text-gray-700 dark:text-gray-200"><?= htmlspecialchars($createdLabel, ENT_QUOTES) ?></td>
                                             </tr>
                                             <?php endforeach; ?>
                                             <?php if (empty($warehouses)): ?>
                                             <tr>
-                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="2">No warehouses yet.</td>
+                                                <td class="px-4 py-6 text-center text-gray-600 dark:text-gray-300" colspan="2">No warehouses yet.</td>
                                             </tr>
                                             <?php endif; ?>
                                         </tbody>
@@ -1003,7 +1003,7 @@ $tabs = [
                         <div class="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
                             <div class="<?= $cardClass ?>">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Parameters</h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Set global warehouse defaults or override a specific SKU.</p>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-200">Set global warehouse defaults or override a specific SKU.</p>
                                 <form method="post" class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                     <input type="hidden" name="action" value="save_parameters">
                                     <div class="md:col-span-1 xl:col-span-1">
@@ -1016,7 +1016,7 @@ $tabs = [
                                         </select>
                                     </div>
                                     <div class="md:col-span-1 xl:col-span-2">
-                                        <label class="<?= $labelClass ?>" for="paramSku">SKU Override <span class="font-normal text-gray-500 dark:text-gray-400">(optional)</span></label>
+                                        <label class="<?= $labelClass ?>" for="paramSku">SKU Override <span class="font-normal text-gray-600 dark:text-gray-300">(optional)</span></label>
                                         <input class="<?= $inputClass ?>" type="text" id="paramSku" name="sku" placeholder="Leave blank for warehouse default">
                                     </div>
                                     <div>
@@ -1045,7 +1045,7 @@ $tabs = [
                                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Warehouse Parameters</h3>
                                     <div class="mt-4 overflow-x-auto">
                                         <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
-                                            <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
+                                            <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.18em] text-gray-200">
                                                 <tr>
                                                     <th class="px-4 py-3 text-left">Warehouse</th>
                                                     <th class="px-4 py-3 text-left">Days to Cover</th>
@@ -1057,16 +1057,16 @@ $tabs = [
                                                 <?php foreach ($warehouses as $warehouse):
                                                     $params = $warehouseParams[$warehouse['id']] ?? $defaults;
                                                 ?>
-                                                <tr class="bg-[#1c1f25] text-sm text-gray-200">
+                                                <tr class="bg-[#1c1f25] text-sm text-gray-100">
                                                     <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
-                                                    <td class="px-4 py-2 text-gray-300"><?= (int) $params['days_to_cover'] ?></td>
-                                                    <td class="px-4 py-2 text-gray-300"><?= (int) $params['ma_window_days'] ?></td>
-                                                    <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
+                                                    <td class="px-4 py-2 text-gray-100"><?= (int) $params['days_to_cover'] ?></td>
+                                                    <td class="px-4 py-2 text-gray-100"><?= (int) $params['ma_window_days'] ?></td>
+                                                    <td class="px-4 py-2 text-gray-100"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
                                                 </tr>
                                                 <?php endforeach; ?>
                                                 <?php if (empty($warehouses)): ?>
                                                 <tr>
-                                                    <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="4">No warehouses configured yet.</td>
+                                                    <td class="px-4 py-6 text-center text-gray-600 dark:text-gray-300" colspan="4">No warehouses configured yet.</td>
                                                 </tr>
                                                 <?php endif; ?>
                                             </tbody>
@@ -1077,7 +1077,7 @@ $tabs = [
                                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">SKU Overrides</h3>
                                     <div class="mt-4 overflow-x-auto">
                                         <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
-                                            <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
+                                            <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.18em] text-gray-200">
                                                 <tr>
                                                     <th class="px-4 py-3 text-left">Warehouse</th>
                                                     <th class="px-4 py-3 text-left">SKU</th>
@@ -1096,13 +1096,13 @@ $tabs = [
                                                             continue;
                                                         }
                                                         foreach ($items as $skuCode => $params): ?>
-                                                            <tr class="bg-[#1c1f25] text-sm text-gray-200">
+                                                            <tr class="bg-[#1c1f25] text-sm text-gray-100">
                                                                 <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
-                                                                <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars($skuCode, ENT_QUOTES) ?></td>
-                                                                <td class="px-4 py-2 text-gray-300"><?= (int) $params['days_to_cover'] ?></td>
-                                                                <td class="px-4 py-2 text-gray-300"><?= (int) $params['ma_window_days'] ?></td>
-                                                                <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
-                                                                <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars(number_format((float) $params['safety_days'], 2), ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2 text-gray-100"><?= htmlspecialchars($skuCode, ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2 text-gray-100"><?= (int) $params['days_to_cover'] ?></td>
+                                                                <td class="px-4 py-2 text-gray-100"><?= (int) $params['ma_window_days'] ?></td>
+                                                                <td class="px-4 py-2 text-gray-100"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2 text-gray-100"><?= htmlspecialchars(number_format((float) $params['safety_days'], 2), ENT_QUOTES) ?></td>
                                                                 <td class="px-4 py-2">
                                                                     <form method="post">
                                                                         <input type="hidden" name="action" value="delete_sku_param">
@@ -1116,7 +1116,7 @@ $tabs = [
                                                     endforeach;
                                                 else: ?>
                                                     <tr>
-                                                        <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="7">No SKU overrides configured.</td>
+                                                        <td class="px-4 py-6 text-center text-gray-600 dark:text-gray-300" colspan="7">No SKU overrides configured.</td>
                                                     </tr>
                                                 <?php endif; ?>
                                             </tbody>
