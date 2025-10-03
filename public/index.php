@@ -400,6 +400,21 @@ if ($salesPreview || $stockPreview) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="styles.css">
+    <script>
+        window.tailwind = window.tailwind || {};
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'card-light': '#f9fafb',
+                        'subtext-light': '#4b5563',
+                        'border-light': '#e5e7eb',
+                    },
+                },
+            },
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -426,10 +441,15 @@ if ($salesPreview || $stockPreview) {
         </div>
     <?php endforeach; ?>
 
+    <div class="rounded-3 border border-border-light bg-card-light p-3 mb-4 text-subtext-light">
+        <h2 class="h5 mb-1 fw-semibold">Operational overview</h2>
+        <p class="mb-0 small">Use the dashboard to monitor demand and manage imports across all warehouses.</p>
+    </div>
+
     <?php if (!is_logged_in()): ?>
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-4">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm border border-border-light bg-card-light text-subtext-light">
                     <div class="card-body">
                         <h5 class="card-title text-center mb-4">Admin Login</h5>
                         <form method="post" novalidate>
