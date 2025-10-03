@@ -391,16 +391,17 @@ if ($salesPreview || $stockPreview) {
     $activeSection = 'parameters';
 }
 
-$cardClass = "rounded-2xl border border-black/10 bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5";
-$inputClass = "mt-1 block w-full rounded-lg border border-black/10 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-white/10 dark:bg-black/30 dark:text-gray-100";
-$labelClass = "text-sm font-semibold text-gray-700 dark:text-gray-300";
-$helperClass = "mt-1 text-xs text-gray-500 dark:text-gray-400";
-$buttonPrimaryClass = "inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40";
-$buttonSecondaryClass = "inline-flex items-center justify-center gap-2 rounded-lg border border-black/10 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-white/10 dark:text-gray-200 dark:hover:border-primary/40 dark:hover:text-primary";
-$checkboxClass = "h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/60 dark:border-gray-600 dark:bg-black/40";
-$tabBaseClass = "section-tab rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary/30";
-$tabActiveClass = "bg-primary text-white shadow-sm";
-$tabInactiveClass = "text-gray-600 hover:bg-primary/10 hover:text-primary dark:text-gray-300 dark:hover:text-primary";
+
+$cardClass = "rounded-2xl border border-white/5 bg-[#23262b] p-6 shadow-[0_24px_48px_rgba(8,10,12,0.35)]";
+$inputClass = "mt-1 block w-full rounded-xl border border-white/10 bg-[#1d2026] px-3 py-2 text-sm text-gray-100 shadow-inner transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40";
+$labelClass = "text-sm font-semibold text-gray-300";
+$helperClass = "mt-1 text-xs text-gray-500";
+$buttonPrimaryClass = "inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40";
+$buttonSecondaryClass = "inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-[#1f2227] px-5 py-2 text-sm font-semibold text-gray-200 transition hover:border-primary/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/30";
+$checkboxClass = "h-4 w-4 rounded border-white/30 bg-[#1d2026] text-primary focus:ring-primary/60";
+$tabBaseClass = "section-tab border-b-2 border-transparent px-4 py-3 text-sm font-semibold tracking-wide text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-primary/30";
+$tabActiveClass = "border-primary text-white";
+$tabInactiveClass = "hover:border-white/10 hover:text-white";
 $tabs = [
     'dashboard' => 'Dashboard',
     'imports' => 'Data Import',
@@ -448,31 +449,39 @@ $tabs = [
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="min-h-screen bg-background-light font-display text-gray-800 antialiased transition-colors duration-200 dark:bg-background-dark dark:text-gray-200">
+
+<body class="min-h-screen bg-[#121417] font-display text-gray-200 antialiased">
     <div class="flex min-h-screen flex-col">
-        <header class="border-b border-black/10 bg-white/70 backdrop-blur dark:border-white/10 dark:bg-white/5">
+        <header class="border-b border-white/10 bg-[#1b1e23]/95 backdrop-blur">
             <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
                 <div class="flex items-center gap-3">
-                    <div class="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <div class="flex size-10 items-center justify-center rounded-2xl bg-primary/20 text-primary">
+
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" class="size-6">
                             <path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor" />
                         </svg>
                     </div>
                     <div>
-                        <p class="text-xs uppercase tracking-wide text-primary/80">Flux Operations</p>
-                        <h1 class="text-lg font-bold text-gray-900 dark:text-white">Demand Planning Workspace</h1>
+
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary/80">FluxForecast</p>
+                        <h1 class="text-lg font-semibold text-white">Demand Planning Workspace</h1>
+
                     </div>
                 </div>
                 <?php if (is_logged_in()): ?>
                 <nav class="flex flex-1 justify-center">
-                    <div class="flex flex-wrap items-center gap-2">
+
+                    <div class="flex flex-wrap items-center gap-6">
+
                         <?php foreach ($tabs as $tabKey => $tabLabel):
                             $isActive = $activeSection === $tabKey;
                             $buttonClasses = $tabBaseClass . ' ' . ($isActive ? $tabActiveClass : $tabInactiveClass);
                         ?>
                         <button
                             type="button"
-                            class="<?= $buttonClasses ?>"
+
+                            class="<?= $buttonClasses ?> uppercase tracking-[0.2em]"
+
                             data-section-trigger="<?= htmlspecialchars($tabKey, ENT_QUOTES) ?>"
                             aria-selected="<?= $isActive ? 'true' : 'false' ?>"
                         >
@@ -484,7 +493,9 @@ $tabs = [
                 <?php endif; ?>
                 <div class="flex items-center gap-3">
                     <?php if (is_logged_in()): ?>
-                    <a href="?action=logout" class="inline-flex items-center gap-2 rounded-full border border-primary/40 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/40">
+
+                    <a href="?action=logout" class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#23262b] px-5 py-2 text-sm font-semibold text-gray-200 transition hover:border-primary/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/30">
+
                         <span class="material-symbols-outlined text-base">logout</span>
                         <span>Log out</span>
                     </a>
@@ -495,15 +506,17 @@ $tabs = [
         <main class="flex-1 px-4 py-10 sm:px-6 lg:px-8">
             <div class="mx-auto w-full max-w-7xl space-y-6">
                 <?php foreach ($messages as $message): ?>
-                    <div class="flex items-start justify-between gap-4 rounded-2xl border border-emerald-200/80 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100" role="alert" data-alert>
+
+                    <div class="flex items-start justify-between gap-4 rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 shadow-lg shadow-emerald-900/20" role="alert" data-alert>
                         <span><?= htmlspecialchars($message, ENT_QUOTES) ?></span>
-                        <button type="button" class="text-emerald-600 transition hover:text-emerald-800 dark:text-emerald-200" data-dismiss-alert>&times;</button>
+                        <button type="button" class="text-emerald-200 transition hover:text-white" data-dismiss-alert>&times;</button>
                     </div>
                 <?php endforeach; ?>
                 <?php foreach ($errors as $error): ?>
-                    <div class="flex items-start justify-between gap-4 rounded-2xl border border-rose-200/70 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200" role="alert" data-alert>
+                    <div class="flex items-start justify-between gap-4 rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200 shadow-lg shadow-rose-900/30" role="alert" data-alert>
                         <span><?= htmlspecialchars($error, ENT_QUOTES) ?></span>
-                        <button type="button" class="text-rose-500 transition hover:text-rose-700 dark:text-rose-200" data-dismiss-alert>&times;</button>
+                        <button type="button" class="text-rose-200 transition hover:text-white" data-dismiss-alert>&times;</button>
+
                     </div>
                 <?php endforeach; ?>
 
@@ -531,8 +544,8 @@ $tabs = [
                 <?php else: ?>
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Operations Overview</h2>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Monitor inventory coverage, demand trends, and configuration across warehouses.</p>
+                            <h2 class="text-3xl font-semibold text-white">Operations Overview</h2>
+                            <p class="max-w-2xl text-sm text-gray-400">Monitor inventory coverage, demand trends, and configuration across warehouses.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <button type="button" class="<?= $buttonSecondaryClass ?>" data-section-trigger="imports">
@@ -549,24 +562,24 @@ $tabs = [
                     <section data-section="dashboard" class="space-y-8<?= $activeSection === 'dashboard' ? '' : ' hidden' ?>">
                         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
                             <div class="<?= $cardClass ?>">
-                                <p class="text-xs font-medium uppercase tracking-widest text-gray-500 dark:text-gray-400">Tracked SKUs</p>
-                                <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white" id="summaryItems">0</p>
-                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">SKUs across selected filters</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.35em] text-gray-400">Tracked SKUs</p>
+                                <p class="mt-3 text-4xl font-semibold text-white" id="summaryItems">0</p>
+                                <p class="mt-3 text-sm text-gray-400">SKUs across selected filters</p>
                             </div>
                             <div class="<?= $cardClass ?>">
-                                <p class="text-xs font-medium uppercase tracking-widest text-gray-500 dark:text-gray-400">Total Reorder</p>
-                                <p class="mt-2 text-3xl font-bold text-primary" id="summaryReorder">0</p>
-                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Units required to hit coverage targets</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.35em] text-gray-400">Total Reorder</p>
+                                <p class="mt-3 text-4xl font-semibold text-primary" id="summaryReorder">0</p>
+                                <p class="mt-3 text-sm text-gray-400">Units required to hit coverage targets</p>
                             </div>
                             <div class="<?= $cardClass ?>">
-                                <p class="text-xs font-medium uppercase tracking-widest text-gray-500 dark:text-gray-400">Low Coverage (&lt;= 7 days)</p>
-                                <p class="mt-2 text-3xl font-bold text-orange-500" id="summaryLowCover">0</p>
-                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">SKUs below protection threshold</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.35em] text-gray-400">Low Coverage (&le; 7 days)</p>
+                                <p class="mt-3 text-4xl font-semibold text-orange-400" id="summaryLowCover">0</p>
+                                <p class="mt-3 text-sm text-gray-400">SKUs below protection threshold</p>
                             </div>
                             <div class="<?= $cardClass ?>">
-                                <p class="text-xs font-medium uppercase tracking-widest text-gray-500 dark:text-gray-400">Warehouses</p>
-                                <p class="mt-2 text-3xl font-bold text-yellow-500" id="summaryWarehouses">0</p>
-                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Active locations in focus</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.35em] text-gray-400">Warehouses</p>
+                                <p class="mt-3 text-4xl font-semibold text-yellow-400" id="summaryWarehouses">0</p>
+                                <p class="mt-3 text-sm text-gray-400">Active locations in focus</p>
                             </div>
                         </div>
 
@@ -574,8 +587,8 @@ $tabs = [
                             <div class="<?= $cardClass ?>">
                                 <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                     <div>
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Demand &amp; Replenishment</h3>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Latest coverage by SKU and warehouse.</p>
+                                        <h3 class="text-lg font-semibold text-white">Demand &amp; Replenishment</h3>
+                                        <p class="text-sm text-gray-400">Latest coverage by SKU and warehouse.</p>
                                     </div>
                                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                                         <label class="sr-only" for="warehouseFilter">Warehouse</label>
@@ -590,9 +603,9 @@ $tabs = [
                                     </div>
                                 </div>
                                 <div class="mt-6 overflow-x-auto">
-                                    <table id="demandTable" class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
+                                    <table id="demandTable" class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
                                         <thead>
-                                            <tr class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                            <tr class="text-xs uppercase tracking-[0.3em] text-gray-500">
                                                 <th class="px-4 py-3 text-left font-semibold">Warehouse</th>
                                                 <th class="px-4 py-3 text-left font-semibold">SKU</th>
                                                 <th class="px-4 py-3 text-left font-semibold">On-hand</th>
@@ -601,26 +614,26 @@ $tabs = [
                                                 <th class="px-4 py-3 text-left font-semibold">Reorder Qty</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="divide-y divide-black/5 dark:divide-white/10"></tbody>
+                                        <tbody class="divide-y divide-white/10"></tbody>
                                     </table>
-                                    <div id="demandEmptyState" class="hidden py-10 text-center text-sm text-gray-500 dark:text-gray-400">No SKUs found for the selected filters.</div>
+                                    <div id="demandEmptyState" class="hidden py-10 text-center text-sm text-gray-500">No SKUs found for the selected filters.</div>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-6">
                                 <div class="<?= $cardClass ?>">
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Reorder Highlights</h3>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Top 10 SKUs ranked by reorder quantity.</p>
+                                    <h3 class="text-lg font-semibold text-white">Reorder Highlights</h3>
+                                    <p class="text-sm text-gray-400">Top 10 SKUs ranked by reorder quantity.</p>
                                     <div class="mt-4 h-48">
                                         <canvas id="reorderChart"></canvas>
-                                        <div id="reorderEmptyState" class="hidden py-6 text-center text-sm text-gray-500 dark:text-gray-400">Upload demand and stock data to see reorder insights.</div>
+                                        <div id="reorderEmptyState" class="hidden py-6 text-center text-sm text-gray-500">Upload demand and stock data to see reorder insights.</div>
                                     </div>
                                 </div>
                                 <div class="<?= $cardClass ?>">
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Rolling Demand Trend</h3>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Select a SKU row to visualize its recent daily demand.</p>
+                                    <h3 class="text-lg font-semibold text-white">Rolling Demand Trend</h3>
+                                    <p class="text-sm text-gray-400">Select a SKU row to visualize its recent daily demand.</p>
                                     <div class="mt-4 h-48">
                                         <canvas id="trendChart"></canvas>
-                                        <div id="trendEmptyState" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">Choose a SKU from the table to explore its demand pattern.</div>
+                                        <div id="trendEmptyState" class="py-6 text-center text-sm text-gray-500">Choose a SKU from the table to explore its demand pattern.</div>
                                     </div>
                                 </div>
                             </div>
@@ -674,7 +687,7 @@ $tabs = [
                                                 <?php foreach ($salesHeader as $index => $columnLabel):
                                                     $displayLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column ' . ($index + 1);
                                                 ?>
-                                                <div class="flex flex-col gap-2 rounded-xl border border-black/10 bg-white/70 p-4 text-sm shadow-sm dark:border-white/10 dark:bg-white/5">
+                                                <div class="flex flex-col gap-2 rounded-xl border border-white/10 bg-[#1f2227] p-4 text-sm text-gray-200 shadow-lg shadow-black/40">
                                                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Column <?= $index + 1 ?></p>
                                                     <p class="truncate font-medium text-gray-900 dark:text-gray-100" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>"><?= htmlspecialchars($displayLabel, ENT_QUOTES) ?></p>
                                                     <div class="mt-2 space-y-2">
@@ -691,27 +704,27 @@ $tabs = [
                                                 <?php endforeach; ?>
                                             </div>
                                             <?php if (empty($salesHeader)): ?>
-                                            <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-400/60 dark:bg-amber-500/10 dark:text-amber-100">No columns detected in the uploaded file.</div>
+                                            <div class="rounded-xl border border-amber-400/60 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">No columns detected in the uploaded file.</div>
                                             <?php endif; ?>
-                                            <div class="overflow-x-auto rounded-xl border border-black/10 dark:border-white/10">
-                                                <table class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
-                                                    <thead class="bg-black/5 dark:bg-white/5">
+                                            <div class="overflow-x-auto rounded-xl border border-white/10">
+                                                <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
+                                                    <thead class="bg-[#1b1e23]/60">
                                                         <tr>
                                                             <?php if ($salesHeaderCount > 0): ?>
                                                                 <?php foreach ($salesHeader as $columnLabel):
                                                                     $headerLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column';
                                                                 ?>
-                                                                <th class="px-4 py-2 text-left font-semibold uppercase tracking-wide text-xs text-gray-500 dark:text-gray-400"><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
+                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-400"><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
                                                                 <?php endforeach; ?>
                                                             <?php else: ?>
-                                                                <th class="px-4 py-2 text-left font-semibold uppercase tracking-wide text-xs text-gray-500 dark:text-gray-400">Data</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">Data</th>
                                                             <?php endif; ?>
                                                         </tr>
                                                     </thead>
-                                                    <tbody class="divide-y divide-black/5 dark:divide-white/10">
+                                                    <tbody class="divide-y divide-white/10">
                                                         <?php if ($salesSampleCount > 0): ?>
                                                             <?php foreach ($salesRows as $row): ?>
-                                                            <tr class="bg-white/70 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
+                                                            <tr class="bg-[#1c1f25] text-sm text-gray-200">
                                                                 <?php if ($salesHeaderCount > 0): ?>
                                                                     <?php for ($i = 0; $i < $salesHeaderCount; $i++): ?>
                                                                     <td class="px-4 py-2"><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
@@ -723,12 +736,12 @@ $tabs = [
                                                             <?php endforeach; ?>
                                                         <?php else: ?>
                                                             <tr>
-                                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No data rows detected.</td>
+                                                                <td class="px-4 py-6 text-center text-gray-500">No data rows detected.</td>
                                                             </tr>
                                                         <?php endif; ?>
                                                     </tbody>
                                                 </table>
-                                                <p class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">Showing the first <?= $salesSampleCount ?> row<?= $salesSampleCount === 1 ? '' : 's' ?> from the file.</p>
+                                                <p class="px-4 py-3 text-xs text-gray-500">Showing the first <?= $salesSampleCount ?> row<?= $salesSampleCount === 1 ? '' : 's' ?> from the file.</p>
                                             </div>
                                             <div class="flex flex-wrap items-center gap-3">
                                                 <button class="<?= $buttonPrimaryClass ?>" type="submit">Import Sales</button>
@@ -811,7 +824,7 @@ $tabs = [
                                                 <?php foreach ($stockHeader as $index => $columnLabel):
                                                     $displayLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column ' . ($index + 1);
                                                 ?>
-                                                <div class="flex flex-col gap-2 rounded-xl border border-black/10 bg-white/70 p-4 text-sm shadow-sm dark:border-white/10 dark:bg-white/5">
+                                                <div class="flex flex-col gap-2 rounded-xl border border-white/10 bg-[#1f2227] p-4 text-sm text-gray-200 shadow-lg shadow-black/40">
                                                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Column <?= $index + 1 ?></p>
                                                     <p class="truncate font-medium text-gray-900 dark:text-gray-100" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>"><?= htmlspecialchars($displayLabel, ENT_QUOTES) ?></p>
                                                     <div class="mt-2 space-y-2">
@@ -828,27 +841,27 @@ $tabs = [
                                                 <?php endforeach; ?>
                                             </div>
                                             <?php if (empty($stockHeader)): ?>
-                                            <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-400/60 dark:bg-amber-500/10 dark:text-amber-100">No columns detected in the uploaded file.</div>
+                                            <div class="rounded-xl border border-amber-400/60 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">No columns detected in the uploaded file.</div>
                                             <?php endif; ?>
-                                            <div class="overflow-x-auto rounded-xl border border-black/10 dark:border-white/10">
-                                                <table class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
-                                                    <thead class="bg-black/5 dark:bg-white/5">
+                                            <div class="overflow-x-auto rounded-xl border border-white/10">
+                                                <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
+                                                    <thead class="bg-[#1b1e23]/60">
                                                         <tr>
                                                             <?php if ($stockHeaderCount > 0): ?>
                                                                 <?php foreach ($stockHeader as $columnLabel):
                                                                     $headerLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column';
                                                                 ?>
-                                                                <th class="px-4 py-2 text-left font-semibold uppercase tracking-wide text-xs text-gray-500 dark:text-gray-400"><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
+                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-400"><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
                                                                 <?php endforeach; ?>
                                                             <?php else: ?>
-                                                                <th class="px-4 py-2 text-left font-semibold uppercase tracking-wide text-xs text-gray-500 dark:text-gray-400">Data</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">Data</th>
                                                             <?php endif; ?>
                                                         </tr>
                                                     </thead>
-                                                    <tbody class="divide-y divide-black/5 dark:divide-white/10">
+                                                    <tbody class="divide-y divide-white/10">
                                                         <?php if ($stockSampleCount > 0): ?>
                                                             <?php foreach ($stockRows as $row): ?>
-                                                            <tr class="bg-white/70 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
+                                                            <tr class="bg-[#1c1f25] text-sm text-gray-200">
                                                                 <?php if ($stockHeaderCount > 0): ?>
                                                                     <?php for ($i = 0; $i < $stockHeaderCount; $i++): ?>
                                                                     <td class="px-4 py-2"><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
@@ -860,12 +873,12 @@ $tabs = [
                                                             <?php endforeach; ?>
                                                         <?php else: ?>
                                                             <tr>
-                                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No data rows detected.</td>
+                                                                <td class="px-4 py-6 text-center text-gray-500">No data rows detected.</td>
                                                             </tr>
                                                         <?php endif; ?>
                                                     </tbody>
                                                 </table>
-                                                <p class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">Showing the first <?= $stockSampleCount ?> row<?= $stockSampleCount === 1 ? '' : 's' ?> from the file.</p>
+                                                <p class="px-4 py-3 text-xs text-gray-500">Showing the first <?= $stockSampleCount ?> row<?= $stockSampleCount === 1 ? '' : 's' ?> from the file.</p>
                                             </div>
                                             <div class="flex flex-wrap items-center gap-3">
                                                 <button class="<?= $buttonPrimaryClass ?>" type="submit">Import Stock</button>
@@ -925,15 +938,15 @@ $tabs = [
                             <div class="<?= $cardClass ?>">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Existing Warehouses</h3>
                                 <div class="mt-4 overflow-x-auto">
-                                    <table class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
-                                        <thead class="bg-black/5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                                    <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
+                                        <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
                                             <tr>
                                                 <th class="px-4 py-3 text-left">Code</th>
                                                 <th class="px-4 py-3 text-left">Name</th>
                                                 <th class="px-4 py-3 text-left">Created</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="divide-y divide-black/5 dark:divide-white/10">
+                                        <tbody class="divide-y divide-white/10">
                                             <?php foreach ($warehouses as $warehouse):
                                                 $createdLabel = '—';
                                                 if (!empty($warehouse['created_at'])) {
@@ -944,15 +957,15 @@ $tabs = [
                                                     }
                                                 }
                                             ?>
-                                            <tr class="bg-white/70 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
-                                                <td class="px-4 py-2 font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
-                                                <td class="px-4 py-2"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
-                                                <td class="px-4 py-2 text-gray-500 dark:text-gray-400"><?= htmlspecialchars($createdLabel, ENT_QUOTES) ?></td>
+                                            <tr class="bg-[#1c1f25] text-sm text-gray-200">
+                                                <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
+                                                <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
+                                                <td class="px-4 py-2 text-gray-500"><?= htmlspecialchars($createdLabel, ENT_QUOTES) ?></td>
                                             </tr>
                                             <?php endforeach; ?>
                                             <?php if (empty($warehouses)): ?>
                                             <tr>
-                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="3">No warehouses yet.</td>
+                                                <td class="px-4 py-6 text-center text-gray-500" colspan="3">No warehouses yet.</td>
                                             </tr>
                                             <?php endif; ?>
                                         </tbody>
@@ -1007,8 +1020,8 @@ $tabs = [
                                 <div class="<?= $cardClass ?>">
                                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Warehouse Parameters</h3>
                                     <div class="mt-4 overflow-x-auto">
-                                        <table class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
-                                            <thead class="bg-black/5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                                        <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
+                                            <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
                                                 <tr>
                                                     <th class="px-4 py-3 text-left">Warehouse</th>
                                                     <th class="px-4 py-3 text-left">Days to Cover</th>
@@ -1016,20 +1029,20 @@ $tabs = [
                                                     <th class="px-4 py-3 text-left">Min Avg</th>
                                                 </tr>
                                             </thead>
-                                            <tbody class="divide-y divide-black/5 dark:divide-white/10">
+                                            <tbody class="divide-y divide-white/10">
                                                 <?php foreach ($warehouses as $warehouse):
                                                     $params = $warehouseParams[$warehouse['id']] ?? $defaults;
                                                 ?>
-                                                <tr class="bg-white/70 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
-                                                    <td class="px-4 py-2 font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></td>
-                                                    <td class="px-4 py-2"><?= (int) $params['days_to_cover'] ?></td>
-                                                    <td class="px-4 py-2"><?= (int) $params['ma_window_days'] ?></td>
-                                                    <td class="px-4 py-2"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
+                                                <tr class="bg-[#1c1f25] text-sm text-gray-200">
+                                                    <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></td>
+                                                    <td class="px-4 py-2 text-gray-300"><?= (int) $params['days_to_cover'] ?></td>
+                                                    <td class="px-4 py-2 text-gray-300"><?= (int) $params['ma_window_days'] ?></td>
+                                                    <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
                                                 </tr>
                                                 <?php endforeach; ?>
                                                 <?php if (empty($warehouses)): ?>
                                                 <tr>
-                                                    <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="4">No warehouses configured yet.</td>
+                                                    <td class="px-4 py-6 text-center text-gray-500" colspan="4">No warehouses configured yet.</td>
                                                 </tr>
                                                 <?php endif; ?>
                                             </tbody>
@@ -1039,8 +1052,8 @@ $tabs = [
                                 <div class="<?= $cardClass ?>">
                                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">SKU Overrides</h3>
                                     <div class="mt-4 overflow-x-auto">
-                                        <table class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
-                                            <thead class="bg-black/5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                                        <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
+                                            <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
                                                 <tr>
                                                     <th class="px-4 py-3 text-left">Warehouse</th>
                                                     <th class="px-4 py-3 text-left">SKU</th>
@@ -1051,7 +1064,7 @@ $tabs = [
                                                     <th class="px-4 py-3 text-left"></th>
                                                 </tr>
                                             </thead>
-                                            <tbody class="divide-y divide-black/5 dark:divide-white/10">
+                                            <tbody class="divide-y divide-white/10">
                                                 <?php if (!empty($skuParams)):
                                                     foreach ($skuParams as $warehouseId => $items):
                                                         $warehouse = $warehouses[$warehouseId] ?? null;
@@ -1059,13 +1072,13 @@ $tabs = [
                                                             continue;
                                                         }
                                                         foreach ($items as $skuCode => $params): ?>
-                                                            <tr class="bg-white/70 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
-                                                                <td class="px-4 py-2 font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
-                                                                <td class="px-4 py-2"><?= htmlspecialchars($skuCode, ENT_QUOTES) ?></td>
-                                                                <td class="px-4 py-2"><?= (int) $params['days_to_cover'] ?></td>
-                                                                <td class="px-4 py-2"><?= (int) $params['ma_window_days'] ?></td>
-                                                                <td class="px-4 py-2"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
-                                                                <td class="px-4 py-2"><?= htmlspecialchars(number_format((float) $params['safety_days'], 2), ENT_QUOTES) ?></td>
+                                                            <tr class="bg-[#1c1f25] text-sm text-gray-200">
+                                                                <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars($skuCode, ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2 text-gray-300"><?= (int) $params['days_to_cover'] ?></td>
+                                                                <td class="px-4 py-2 text-gray-300"><?= (int) $params['ma_window_days'] ?></td>
+                                                                <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars(number_format((float) $params['safety_days'], 2), ENT_QUOTES) ?></td>
                                                                 <td class="px-4 py-2">
                                                                     <form method="post">
                                                                         <input type="hidden" name="action" value="delete_sku_param">
@@ -1079,7 +1092,7 @@ $tabs = [
                                                     endforeach;
                                                 else: ?>
                                                     <tr>
-                                                        <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="7">No SKU overrides configured.</td>
+                                                        <td class="px-4 py-6 text-center text-gray-500" colspan="7">No SKU overrides configured.</td>
                                                     </tr>
                                                 <?php endif; ?>
                                             </tbody>
@@ -1138,9 +1151,7 @@ $tabs = [
         }
 
         function setupColorScheme() {
-
             document.documentElement.classList.add('dark');
-
         }
 
         function dismissAlerts() {
@@ -1229,7 +1240,7 @@ $tabs = [
                             currentRowsMap.set(key, row);
                             const tr = document.createElement('tr');
                             tr.dataset.key = key;
-                            tr.className = 'cursor-pointer bg-white/70 transition hover:bg-primary/10 dark:bg-white/5 dark:hover:bg-primary/20';
+                            tr.className = 'cursor-pointer bg-[#1c1f25] transition hover:bg-primary/20 hover:bg-opacity-30';
 
                             const warehouseCell = document.createElement('td');
                             warehouseCell.className = 'px-4 py-3 font-medium text-gray-900 dark:text-gray-100';
