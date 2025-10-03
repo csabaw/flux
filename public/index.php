@@ -1302,7 +1302,9 @@ $tabs = [
         function refreshDashboard() {
             const warehouseSelect = document.getElementById('warehouseFilter');
             const skuInput = document.getElementById('skuFilter');
-            if (!warehouseSelect || !skuInput) {
+            const tableBody = document.querySelector('#demandTable tbody');
+            const emptyState = document.getElementById('demandEmptyState');
+            if (!warehouseSelect || !skuInput || !tableBody) {
                 return;
             }
             const params = new URLSearchParams();
@@ -1330,8 +1332,8 @@ $tabs = [
                         emptyState.classList.toggle('hidden', rows.length > 0);
                     }
 
-                    if (tableBody) {
-                        rows.forEach((row) => {
+                    tableBody.innerHTML = '';
+                    rows.forEach((row) => {
                             const key = `${row.warehouse_id}|${row.sku}`;
                             currentRowsMap.set(key, row);
                             const tr = document.createElement('tr');
@@ -1368,9 +1370,8 @@ $tabs = [
                             reorderCell.textContent = formatInteger(row.reorder_qty);
                             tr.appendChild(reorderCell);
 
-                            tableBody.appendChild(tr);
-                        });
-                    }
+                        tableBody.appendChild(tr);
+                    });
 
                     const summaryItems = document.getElementById('summaryItems');
                     if (summaryItems) {
