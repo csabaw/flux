@@ -12,7 +12,10 @@ header('Content-Type: application/json');
 
 $filters = [];
 if (isset($_GET['warehouse_id']) && $_GET['warehouse_id'] !== '') {
-    $filters['warehouse_id'] = (int) $_GET['warehouse_id'];
+    $warehouseFilter = (int) $_GET['warehouse_id'];
+    if ($warehouseFilter > 0) {
+        $filters['warehouse_id'] = $warehouseFilter;
+    }
 }
 if (isset($_GET['sku']) && $_GET['sku'] !== '') {
     $filters['sku'] = trim((string) $_GET['sku']);
