@@ -602,8 +602,14 @@ $tabs = [
                                         <input id="skuFilter" type="text" placeholder="Filter by SKU" class="<?= $inputClass ?> sm:w-48">
                                     </div>
                                 </div>
-                                <div class="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-lg shadow-black/30">
-                                    <div class="overflow-x-auto">
+                                <div id="demandTableContainer" class="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-lg shadow-black/30">
+                                    <div id="dashboardLoading" class="hidden px-6 py-10 text-center text-sm text-gray-400" role="status" aria-live="polite" aria-hidden="true">
+                                        <div class="flex flex-col items-center justify-center gap-3">
+                                            <span class="loading-spinner" aria-hidden="true"></span>
+                                            <span>Loading latest demand data&hellip;</span>
+                                        </div>
+                                    </div>
+                                    <div id="demandTableScroll" class="overflow-x-auto">
                                         <table id="demandTable" class="w-full min-w-[960px] table-auto text-sm text-gray-200">
                                             <thead class="bg-white/[0.03] text-xs font-medium uppercase tracking-[0.3em] text-gray-400">
                                                 <tr>
@@ -1269,6 +1275,37 @@ $tabs = [
             return integerFormatter.format(Math.round(numericValue));
         }
 
+        function setDashboardLoading(isLoading) {
+            const loadingEl = document.getElementById('dashboardLoading');
+            const tableScroll = document.getElementById('demandTableScroll');
+            const tableContainer = document.getElementById('demandTableContainer');
+
+            if (loadingEl) {
+                if (isLoading) {
+                    loadingEl.classList.remove('hidden');
+                    loadingEl.setAttribute('aria-hidden', 'false');
+                } else {
+                    loadingEl.classList.add('hidden');
+                    loadingEl.setAttribute('aria-hidden', 'true');
+                }
+            }
+
+            if (tableScroll) {
+                tableScroll.classList.toggle('hidden', isLoading);
+            }
+
+            if (tableContainer) {
+                tableContainer.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+            }
+
+            if (isLoading) {
+                const emptyState = document.getElementById('demandEmptyState');
+                if (emptyState) {
+                    emptyState.classList.add('hidden');
+                }
+            }
+        }
+
         function refreshDashboard() {
             const warehouseSelect = document.getElementById('warehouseFilter');
             const skuInput = document.getElementById('skuFilter');
@@ -1279,6 +1316,8 @@ $tabs = [
             if (warehouseSelect.value) params.append('warehouse_id', warehouseSelect.value);
             if (skuInput.value.trim()) params.append('sku', skuInput.value.trim());
             const url = 'api.php' + (params.toString() ? `?${params.toString()}` : '');
+
+            setDashboardLoading(true);
 
             fetch(url, { credentials: 'same-origin' })
                 .then((response) => response.json())
@@ -1375,6 +1414,9 @@ $tabs = [
                 })
                 .catch((error) => {
                     console.error('Failed to load dashboard data', error);
+                })
+                .finally(() => {
+                    setDashboardLoading(false);
                 });
         }
 
