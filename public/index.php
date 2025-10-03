@@ -387,7 +387,7 @@ if ($salesPreview || $stockPreview) {
 $cardClass = "rounded-2xl border border-white/5 bg-[#23262b] p-6 shadow-[0_24px_48px_rgba(8,10,12,0.35)]";
 $inputClass = "mt-1 block w-full rounded-xl border border-white/10 bg-[#1d2026] px-3 py-2 text-sm text-gray-100 shadow-inner transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40";
 $labelClass = "text-sm font-semibold text-gray-300";
-$helperClass = "mt-1 text-xs text-gray-500";
+$helperClass = "mt-1 text-xs text-gray-500 dark:text-gray-400";
 $buttonPrimaryClass = "inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40";
 $buttonSecondaryClass = "inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-[#1f2227] px-5 py-2 text-sm font-semibold text-gray-200 transition hover:border-primary/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/30";
 $checkboxClass = "h-4 w-4 rounded border-white/30 bg-[#1d2026] text-primary focus:ring-primary/60";
@@ -646,7 +646,7 @@ $tabs = [
                                             <tbody class="divide-y divide-white/5 bg-white/[0.01]"></tbody>
                                         </table>
                                     </div>
-                                    <div id="demandEmptyState" class="hidden border-t border-white/5 bg-transparent py-10 text-center text-sm text-gray-500">No SKUs found for the selected filters.</div>
+                                    <div id="demandEmptyState" class="hidden border-t border-white/5 bg-transparent py-10 text-center text-sm text-gray-500 dark:text-gray-400">No SKUs found for the selected filters.</div>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-6">
@@ -655,7 +655,7 @@ $tabs = [
                                     <p class="text-sm text-gray-400">Top 10 SKUs ranked by reorder quantity.</p>
                                     <div class="mt-4 h-48">
                                         <canvas id="reorderChart"></canvas>
-                                        <div id="reorderEmptyState" class="hidden py-6 text-center text-sm text-gray-500">Upload demand and stock data to see reorder insights.</div>
+                                        <div id="reorderEmptyState" class="hidden py-6 text-center text-sm text-gray-500 dark:text-gray-400">Upload demand and stock data to see reorder insights.</div>
                                     </div>
                                 </div>
                                 <div class="<?= $cardClass ?>">
@@ -663,7 +663,7 @@ $tabs = [
                                     <p class="text-sm text-gray-400">Select a SKU row to visualize its recent daily demand.</p>
                                     <div class="mt-4 h-48">
                                         <canvas id="trendChart"></canvas>
-                                        <div id="trendEmptyState" class="py-6 text-center text-sm text-gray-500">Choose a SKU from the table to explore its demand pattern.</div>
+                                        <div id="trendEmptyState" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">Choose a SKU from the table to explore its demand pattern.</div>
                                     </div>
                                 </div>
                             </div>
@@ -766,12 +766,12 @@ $tabs = [
                                                             <?php endforeach; ?>
                                                         <?php else: ?>
                                                             <tr>
-                                                                <td class="px-4 py-6 text-center text-gray-500">No data rows detected.</td>
+                                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No data rows detected.</td>
                                                             </tr>
                                                         <?php endif; ?>
                                                     </tbody>
                                                 </table>
-                                                <p class="px-4 py-3 text-xs text-gray-500">Showing the first <?= $salesSampleCount ?> row<?= $salesSampleCount === 1 ? '' : 's' ?> from the file.</p>
+                                                <p class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">Showing the first <?= $salesSampleCount ?> row<?= $salesSampleCount === 1 ? '' : 's' ?> from the file.</p>
                                             </div>
                                             <div class="flex flex-wrap items-center gap-3">
                                                 <button class="<?= $buttonPrimaryClass ?>" type="submit">Import Sales</button>
@@ -903,12 +903,12 @@ $tabs = [
                                                             <?php endforeach; ?>
                                                         <?php else: ?>
                                                             <tr>
-                                                                <td class="px-4 py-6 text-center text-gray-500">No data rows detected.</td>
+                                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No data rows detected.</td>
                                                             </tr>
                                                         <?php endif; ?>
                                                     </tbody>
                                                 </table>
-                                                <p class="px-4 py-3 text-xs text-gray-500">Showing the first <?= $stockSampleCount ?> row<?= $stockSampleCount === 1 ? '' : 's' ?> from the file.</p>
+                                                <p class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">Showing the first <?= $stockSampleCount ?> row<?= $stockSampleCount === 1 ? '' : 's' ?> from the file.</p>
                                             </div>
                                             <div class="flex flex-wrap items-center gap-3">
                                                 <button class="<?= $buttonPrimaryClass ?>" type="submit">Import Stock</button>
@@ -984,12 +984,12 @@ $tabs = [
                                             ?>
                                             <tr class="bg-[#1c1f25] text-sm text-gray-200">
                                                 <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
-                                                <td class="px-4 py-2 text-gray-500"><?= htmlspecialchars($createdLabel, ENT_QUOTES) ?></td>
+                                                <td class="px-4 py-2 text-gray-500 dark:text-gray-400"><?= htmlspecialchars($createdLabel, ENT_QUOTES) ?></td>
                                             </tr>
                                             <?php endforeach; ?>
                                             <?php if (empty($warehouses)): ?>
                                             <tr>
-                                                <td class="px-4 py-6 text-center text-gray-500" colspan="2">No warehouses yet.</td>
+                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="2">No warehouses yet.</td>
                                             </tr>
                                             <?php endif; ?>
                                         </tbody>
@@ -1066,7 +1066,7 @@ $tabs = [
                                                 <?php endforeach; ?>
                                                 <?php if (empty($warehouses)): ?>
                                                 <tr>
-                                                    <td class="px-4 py-6 text-center text-gray-500" colspan="4">No warehouses configured yet.</td>
+                                                    <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="4">No warehouses configured yet.</td>
                                                 </tr>
                                                 <?php endif; ?>
                                             </tbody>
@@ -1116,7 +1116,7 @@ $tabs = [
                                                     endforeach;
                                                 else: ?>
                                                     <tr>
-                                                        <td class="px-4 py-6 text-center text-gray-500" colspan="7">No SKU overrides configured.</td>
+                                                        <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="7">No SKU overrides configured.</td>
                                                     </tr>
                                                 <?php endif; ?>
                                             </tbody>
