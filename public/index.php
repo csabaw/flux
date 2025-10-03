@@ -391,6 +391,7 @@ if ($salesPreview || $stockPreview) {
     $activeSection = 'parameters';
 }
 
+
 $cardClass = "rounded-2xl border border-white/5 bg-[#23262b] p-6 shadow-[0_24px_48px_rgba(8,10,12,0.35)]";
 $inputClass = "mt-1 block w-full rounded-xl border border-white/10 bg-[#1d2026] px-3 py-2 text-sm text-gray-100 shadow-inner transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40";
 $labelClass = "text-sm font-semibold text-gray-300";
@@ -410,7 +411,9 @@ $tabs = [
 
 ?>
 <!DOCTYPE html>
+
 <html lang="en" class="dark h-full">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -446,31 +449,39 @@ $tabs = [
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body class="min-h-screen bg-[#121417] font-display text-gray-200 antialiased">
     <div class="flex min-h-screen flex-col">
         <header class="border-b border-white/10 bg-[#1b1e23]/95 backdrop-blur">
             <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
                 <div class="flex items-center gap-3">
                     <div class="flex size-10 items-center justify-center rounded-2xl bg-primary/20 text-primary">
+
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" class="size-6">
                             <path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor" />
                         </svg>
                     </div>
                     <div>
+
                         <p class="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary/80">FluxForecast</p>
                         <h1 class="text-lg font-semibold text-white">Demand Planning Workspace</h1>
+
                     </div>
                 </div>
                 <?php if (is_logged_in()): ?>
                 <nav class="flex flex-1 justify-center">
+
                     <div class="flex flex-wrap items-center gap-6">
+
                         <?php foreach ($tabs as $tabKey => $tabLabel):
                             $isActive = $activeSection === $tabKey;
                             $buttonClasses = $tabBaseClass . ' ' . ($isActive ? $tabActiveClass : $tabInactiveClass);
                         ?>
                         <button
                             type="button"
+
                             class="<?= $buttonClasses ?> uppercase tracking-[0.2em]"
+
                             data-section-trigger="<?= htmlspecialchars($tabKey, ENT_QUOTES) ?>"
                             aria-selected="<?= $isActive ? 'true' : 'false' ?>"
                         >
@@ -482,7 +493,9 @@ $tabs = [
                 <?php endif; ?>
                 <div class="flex items-center gap-3">
                     <?php if (is_logged_in()): ?>
+
                     <a href="?action=logout" class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#23262b] px-5 py-2 text-sm font-semibold text-gray-200 transition hover:border-primary/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/30">
+
                         <span class="material-symbols-outlined text-base">logout</span>
                         <span>Log out</span>
                     </a>
@@ -493,6 +506,7 @@ $tabs = [
         <main class="flex-1 px-4 py-10 sm:px-6 lg:px-8">
             <div class="mx-auto w-full max-w-7xl space-y-6">
                 <?php foreach ($messages as $message): ?>
+
                     <div class="flex items-start justify-between gap-4 rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 shadow-lg shadow-emerald-900/20" role="alert" data-alert>
                         <span><?= htmlspecialchars($message, ENT_QUOTES) ?></span>
                         <button type="button" class="text-emerald-200 transition hover:text-white" data-dismiss-alert>&times;</button>
@@ -502,6 +516,7 @@ $tabs = [
                     <div class="flex items-start justify-between gap-4 rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200 shadow-lg shadow-rose-900/30" role="alert" data-alert>
                         <span><?= htmlspecialchars($error, ENT_QUOTES) ?></span>
                         <button type="button" class="text-rose-200 transition hover:text-white" data-dismiss-alert>&times;</button>
+
                     </div>
                 <?php endforeach; ?>
 
