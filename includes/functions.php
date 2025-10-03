@@ -8,13 +8,31 @@ declare(strict_types=1);
 function getWarehouses(mysqli $mysqli): array
 {
     $warehouses = [];
-    $result = $mysqli->query('SELECT id, name, created_at FROM warehouses ORDER BY name');
-    if ($result) {
+
+    static $hasCreatedAtCache;
+    if ($hasCreatedAtCache === null) {
+        $hasCreatedAtCache = tableColumnExists($mysqli, 'warehouses', 'created_at');
+    }
+    $hasCreatedAt = $hasCreatedAtCache;
+    $columns = 'id, name' . ($hasCreatedAt ? ', created_at' : '');
+    $sql = 'SELECT ' . $columns . ' FROM warehouses ORDER BY name';
+
+    if ($result = $mysqli->query($sql)) {
         while ($row = $result->fetch_assoc()) {
-            $warehouses[(int) $row['id']] = $row;
+            $id = (int) ($row['id'] ?? 0);
+            if ($id <= 0) {
+                continue;
+            }
+
+            $warehouses[$id] = [
+                'id' => $id,
+                'name' => (string) ($row['name'] ?? ''),
+                'created_at' => $hasCreatedAt ? ($row['created_at'] ?? null) : null,
+            ];
         }
         $result->free();
     }
+
     return $warehouses;
 }
 
