@@ -1317,7 +1317,8 @@ $tabs = [
             fetch(url, { credentials: 'same-origin' })
                 .then((response) => response.json())
                 .then((payload) => {
-                    const rows = payload.data || [];
+                    const rowsSource = payload.data || [];
+                    const rows = Array.isArray(rowsSource) ? rowsSource : Object.values(rowsSource);
                     currentRows = rows.slice();
                     currentRowsMap = new Map();
                     currentRows.forEach((row) => {
@@ -1492,13 +1493,14 @@ $tabs = [
         }
 
         function renderDemandTable(rows) {
+            const normalizedRows = Array.isArray(rows) ? rows : Object.values(rows || {});
             const tableBody = document.querySelector('#demandTable tbody');
             if (!tableBody) {
                 return;
             }
             tableBody.innerHTML = '';
             let highlightedRow = null;
-            rows.forEach((row) => {
+            normalizedRows.forEach((row) => {
                 const key = `${row.warehouse_id}|${row.sku}`;
                 const tr = document.createElement('tr');
                 tr.dataset.key = key;
