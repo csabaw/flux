@@ -42,3 +42,18 @@ body {
         transform: translateY(0);
     }
 }
+
+.loading-spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    border: 3px solid rgba(15, 145, 189, 0.25);
+    border-top-color: #0f91bd;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
