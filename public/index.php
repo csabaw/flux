@@ -1265,6 +1265,8 @@ $tabs = [
             const loadingEl = document.getElementById('dashboardLoading');
             const tableScroll = document.getElementById('demandTableScroll');
             const tableContainer = document.getElementById('demandTableContainer');
+            const tableBody = document.querySelector('#demandTable tbody');
+            const hasRows = !!(tableBody && tableBody.children.length > 0);
 
             if (loadingEl) {
                 if (isLoading) {
@@ -1277,11 +1279,16 @@ $tabs = [
             }
 
             if (tableScroll) {
-                tableScroll.classList.toggle('hidden', isLoading);
+                if (isLoading && !hasRows) {
+                    tableScroll.classList.add('hidden');
+                } else {
+                    tableScroll.classList.remove('hidden');
+                }
             }
 
             if (tableContainer) {
                 tableContainer.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+                tableContainer.classList.toggle('is-loading', isLoading && hasRows);
             }
 
             if (isLoading) {

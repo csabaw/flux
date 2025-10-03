@@ -52,6 +52,12 @@ body {
     animation: spin 1s linear infinite;
 }
 
+#demandTableContainer.is-loading #demandTableScroll {
+    opacity: 0.4;
+    pointer-events: none;
+    transition: opacity 150ms ease;
+}
+
 @keyframes spin {
     to {
         transform: rotate(360deg);
