@@ -410,7 +410,9 @@ $tabs = [
 
 ?>
 <!DOCTYPE html>
+
 <html lang="en" class="dark h-full">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1136,7 +1138,9 @@ $tabs = [
         }
 
         function setupColorScheme() {
+
             document.documentElement.classList.add('dark');
+
         }
 
         function dismissAlerts() {
