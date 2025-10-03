@@ -445,7 +445,7 @@ $tabs = [
 <body class="min-h-screen bg-[#121417] font-display text-gray-200 antialiased">
     <div class="flex min-h-screen flex-col">
         <header class="border-b border-white/10 bg-[#1b1e23]/95 backdrop-blur">
-            <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+            <div class="mx-auto flex w-full max-w-none flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
                 <div class="flex items-center gap-3">
                     <div class="flex size-10 items-center justify-center rounded-2xl bg-primary/20 text-primary">
 
@@ -496,7 +496,7 @@ $tabs = [
             </div>
         </header>
         <main class="flex-1 px-4 py-10 sm:px-6 lg:px-8">
-            <div class="mx-auto w-full max-w-7xl space-y-6">
+            <div class="mx-auto w-full max-w-none space-y-6">
                 <?php foreach ($messages as $message): ?>
 
                     <div class="flex items-start justify-between gap-4 rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 shadow-lg shadow-emerald-900/20" role="alert" data-alert>
@@ -537,7 +537,7 @@ $tabs = [
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <h2 class="text-3xl font-semibold text-white">Operations Overview</h2>
-                            <p class="max-w-2xl text-sm text-gray-400">Monitor inventory coverage, demand trends, and configuration across warehouses.</p>
+                            <p class="text-sm text-gray-400">Monitor inventory coverage, demand trends, and configuration across warehouses.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <button type="button" class="<?= $buttonSecondaryClass ?>" data-section-trigger="imports">
