@@ -391,918 +391,1066 @@ if ($salesPreview || $stockPreview) {
     $activeSection = 'parameters';
 }
 
-?><!DOCTYPE html>
-<html lang="en">
+$cardClass = "rounded-2xl border border-black/10 bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5";
+$inputClass = "mt-1 block w-full rounded-lg border border-black/10 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-white/10 dark:bg-black/30 dark:text-gray-100";
+$labelClass = "text-sm font-semibold text-gray-700 dark:text-gray-300";
+$helperClass = "mt-1 text-xs text-gray-500 dark:text-gray-400";
+$buttonPrimaryClass = "inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40";
+$buttonSecondaryClass = "inline-flex items-center justify-center gap-2 rounded-lg border border-black/10 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-white/10 dark:text-gray-200 dark:hover:border-primary/40 dark:hover:text-primary";
+$checkboxClass = "h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/60 dark:border-gray-600 dark:bg-black/40";
+$tabBaseClass = "section-tab rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary/30";
+$tabActiveClass = "bg-primary text-white shadow-sm";
+$tabInactiveClass = "text-gray-600 hover:bg-primary/10 hover:text-primary dark:text-gray-300 dark:hover:text-primary";
+$tabs = [
+    'dashboard' => 'Dashboard',
+    'imports' => 'Data Import',
+    'warehouses' => 'Warehouses',
+    'parameters' => 'Parameters',
+];
+
+?>
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Multi-Warehouse Demand Planning</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Sans:wght@400;500;700;900&display=swap">
     <script>
         window.tailwind = window.tailwind || {};
-        tailwind.config = {
+        window.tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        'card-light': '#f9fafb',
-                        'subtext-light': '#4b5563',
-                        'border-light': '#e5e7eb',
+                        primary: '#0f91bd',
+                        'background-light': '#f6f7f8',
+                        'background-dark': '#101d22',
+                    },
+                    fontFamily: {
+                        display: ['Manrope', 'Noto Sans', 'ui-sans-serif', 'system-ui'],
+                    },
+                    borderRadius: {
+                        DEFAULT: '0.25rem',
+                        lg: '0.5rem',
+                        xl: '0.75rem',
+                        full: '9999px',
                     },
                 },
             },
         };
     </script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
-        <span class="navbar-brand">Demand Planning Dashboard</span>
-        <?php if (is_logged_in()): ?>
-        <div class="d-flex">
-            <a class="btn btn-outline-light btn-sm" href="?action=logout">Logout</a>
-        </div>
-        <?php endif; ?>
-    </div>
-</nav>
-<div class="container-fluid my-4 px-4">
-    <?php foreach ($messages as $message): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <?= htmlspecialchars($message, ENT_QUOTES) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endforeach; ?>
-    <?php foreach ($errors as $error): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <?= htmlspecialchars($error, ENT_QUOTES) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endforeach; ?>
-
-    <div class="rounded-3 border border-border-light bg-card-light p-3 mb-4 text-subtext-light">
-        <h2 class="h5 mb-1 fw-semibold">Operational overview</h2>
-        <p class="mb-0 small">Use the dashboard to monitor demand and manage imports across all warehouses.</p>
-    </div>
-
-    <?php if (!is_logged_in()): ?>
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-4">
-                <div class="card shadow-sm border border-border-light bg-card-light text-subtext-light">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-4">Admin Login</h5>
-                        <form method="post" novalidate>
-                            <input type="hidden" name="action" value="login">
-                            <div class="mb-3">
-                                <label class="form-label" for="username">Username</label>
-                                <input class="form-control" type="text" id="username" name="username" required autofocus>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="password">Password</label>
-                                <input class="form-control" type="password" id="password" name="password" required>
-                            </div>
-                            <button class="btn btn-primary w-100" type="submit">Sign in</button>
-                        </form>
+<body class="min-h-screen bg-background-light font-display text-gray-800 antialiased transition-colors duration-200 dark:bg-background-dark dark:text-gray-200">
+    <div class="flex min-h-screen flex-col">
+        <header class="border-b border-black/10 bg-white/70 backdrop-blur dark:border-white/10 dark:bg-white/5">
+            <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+                <div class="flex items-center gap-3">
+                    <div class="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" class="size-6">
+                            <path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor" />
+                        </svg>
                     </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-wide text-primary/80">Flux Operations</p>
+                        <h1 class="text-lg font-bold text-gray-900 dark:text-white">Demand Planning Workspace</h1>
+                    </div>
+                </div>
+                <?php if (is_logged_in()): ?>
+                <nav class="flex flex-1 justify-center">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <?php foreach ($tabs as $tabKey => $tabLabel):
+                            $isActive = $activeSection === $tabKey;
+                            $buttonClasses = $tabBaseClass . ' ' . ($isActive ? $tabActiveClass : $tabInactiveClass);
+                        ?>
+                        <button
+                            type="button"
+                            class="<?= $buttonClasses ?>"
+                            data-section-trigger="<?= htmlspecialchars($tabKey, ENT_QUOTES) ?>"
+                            aria-selected="<?= $isActive ? 'true' : 'false' ?>"
+                        >
+                            <?= htmlspecialchars($tabLabel, ENT_QUOTES) ?>
+                        </button>
+                        <?php endforeach; ?>
+                    </div>
+                </nav>
+                <?php endif; ?>
+                <div class="flex items-center gap-3">
+                    <?php if (is_logged_in()): ?>
+                    <a href="?action=logout" class="inline-flex items-center gap-2 rounded-full border border-primary/40 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/40">
+                        <span class="material-symbols-outlined text-base">logout</span>
+                        <span>Log out</span>
+                    </a>
+                    <?php endif; ?>
                 </div>
             </div>
-        </div>
-    <?php else: ?>
-        <ul class="nav nav-pills mb-4" id="dashboardTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link<?= $activeSection === 'dashboard' ? ' active' : '' ?>" data-section="dashboard" type="button">Dashboard</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link<?= $activeSection === 'imports' ? ' active' : '' ?>" data-section="imports" type="button">Data Import</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link<?= $activeSection === 'warehouses' ? ' active' : '' ?>" data-section="warehouses" type="button">Warehouses</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link<?= $activeSection === 'parameters' ? ' active' : '' ?>" data-section="parameters" type="button">Parameters</button>
-            </li>
-        </ul>
+        </header>
+        <main class="flex-1 px-4 py-10 sm:px-6 lg:px-8">
+            <div class="mx-auto w-full max-w-7xl space-y-6">
+                <?php foreach ($messages as $message): ?>
+                    <div class="flex items-start justify-between gap-4 rounded-2xl border border-emerald-200/80 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100" role="alert" data-alert>
+                        <span><?= htmlspecialchars($message, ENT_QUOTES) ?></span>
+                        <button type="button" class="text-emerald-600 transition hover:text-emerald-800 dark:text-emerald-200" data-dismiss-alert>&times;</button>
+                    </div>
+                <?php endforeach; ?>
+                <?php foreach ($errors as $error): ?>
+                    <div class="flex items-start justify-between gap-4 rounded-2xl border border-rose-200/70 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200" role="alert" data-alert>
+                        <span><?= htmlspecialchars($error, ENT_QUOTES) ?></span>
+                        <button type="button" class="text-rose-500 transition hover:text-rose-700 dark:text-rose-200" data-dismiss-alert>&times;</button>
+                    </div>
+                <?php endforeach; ?>
 
-        <section id="section-dashboard"<?= $activeSection === 'dashboard' ? '' : ' class="d-none"' ?>>
-            <div class="row g-4 mb-4">
-                <div class="col-12">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
-                            <h5 class="mb-0">Demand &amp; Replenishment</h5>
-                            <div class="d-flex flex-wrap gap-2">
-                                <select class="form-select form-select-sm" id="warehouseFilter">
-                                    <option value="">All Warehouses</option>
-                                    <?php foreach ($warehouses as $warehouse): ?>
-                                        <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <input type="text" class="form-control form-control-sm" id="skuFilter" placeholder="Filter by SKU">
+                <?php if (!is_logged_in()): ?>
+                    <div class="flex min-h-[60vh] items-center justify-center">
+                        <div class="w-full max-w-md <?= $cardClass ?> sm:p-8">
+                            <div class="mb-6 text-center">
+                                <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Admin Login</h2>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Sign in to access warehouse demand insights.</p>
                             </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped align-middle" id="demandTable" style="width:100%">
-                                    <thead>
-                                        <tr>
-                                            <th>Warehouse</th>
-                                            <th>SKU</th>
-                                            <th>Stock</th>
-                                            <th>Moving Avg</th>
-                                            <th>Days of Cover</th>
-                                            <th>Reorder Qty</th>
-                                            <th class="d-none">Key</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row g-4 align-items-stretch">
-                <div class="col-lg-4 col-xl-3">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">Summary</h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="mb-1"><strong>Total Items:</strong> <span id="summaryItems">0</span></p>
-                            <p class="mb-3"><strong>Total Reorder Qty:</strong> <span id="summaryReorder">0</span></p>
-                            <canvas id="reorderChart" height="220"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-8 col-xl-9">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">Rolling Demand (Last Window)</h5>
-                        </div>
-                        <div class="card-body small">
-                            <p class="text-muted">Select a row in the table to visualize its recent demand trend.</p>
-                            <canvas id="trendChart" height="220"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="section-imports"<?= $activeSection === 'imports' ? '' : ' class="d-none"' ?>>
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">Upload Daily Sales CSV</h5>
-                        </div>
-                        <div class="card-body">
-                            <?php if ($salesPreview): ?>
-                                <?php
-                                    $salesHeader = is_array($salesPreview['header'] ?? null) ? $salesPreview['header'] : [];
-                                    $salesRows = is_array($salesPreview['rows'] ?? null) ? $salesPreview['rows'] : [];
-                                    $salesHeaderCount = count($salesHeader);
-                                    $salesSampleCount = count($salesRows);
-                                    $salesWarehouseId = (int) ($salesPreview['warehouse_id'] ?? 0);
-                                    $salesWarehouseInfo = $warehouses[$salesWarehouseId] ?? null;
-                                    $salesWarehouseLabel = $salesWarehouseInfo
-                                        ? ($salesWarehouseInfo['code'] . ' · ' . $salesWarehouseInfo['name'])
-                                        : ('ID ' . $salesWarehouseId);
-                                    $salesColumnMap = is_array($salesPreview['column_map'] ?? null) ? $salesPreview['column_map'] : [];
-                                    $salesFields = ['sale_date' => 'Sale Date', 'sku' => 'SKU', 'quantity' => 'Quantity'];
-                                ?>
-                                <p class="text-muted">Preview the uploaded file and choose the columns for sale date, SKU, and quantity.</p>
-                                <div class="mb-3 small">
-                                    <div><strong>Warehouse:</strong> <?= htmlspecialchars($salesWarehouseLabel, ENT_QUOTES) ?></div>
-                                    <div><strong>File:</strong> <?= htmlspecialchars((string) ($salesPreview['filename'] ?? 'uploaded.csv'), ENT_QUOTES) ?></div>
-                                    <div><strong>Rows previewed:</strong> <?= $salesSampleCount ?></div>
+                            <form method="post" class="space-y-4" novalidate>
+                                <input type="hidden" name="action" value="login">
+                                <div>
+                                    <label class="<?= $labelClass ?>" for="username">Username</label>
+                                    <input class="<?= $inputClass ?>" type="text" id="username" name="username" required autofocus>
                                 </div>
-                                <form method="post">
-                                    <input type="hidden" name="action" value="confirm_sales">
-                                    <div class="row g-3 mb-3">
-                                        <?php foreach ($salesHeader as $index => $columnLabel):
-                                            $displayLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column ' . ($index + 1);
-                                        ?>
-                                        <div class="col-md-4">
-                                            <div class="border rounded p-3 h-100">
-                                                <div class="small text-muted text-uppercase mb-1">Column <?= $index + 1 ?></div>
-                                                <div class="fw-semibold text-truncate" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>">
-                                                    <?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>
-                                                </div>
-                                                <div class="mt-2">
-                                                    <?php foreach ($salesFields as $fieldKey => $fieldLabel):
-                                                        $checked = isset($salesColumnMap[$fieldKey]) && (int) $salesColumnMap[$fieldKey] === (int) $index;
-                                                    ?>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input column-checkbox" type="checkbox" id="sales-<?= $fieldKey ?>-<?= $index ?>" name="column_map[<?= $fieldKey ?>]" value="<?= $index ?>" data-field="<?= $fieldKey ?>" <?= $checked ? 'checked' : '' ?>>
-                                                        <label class="form-check-label small" for="sales-<?= $fieldKey ?>-<?= $index ?>">Use as <?= htmlspecialchars($fieldLabel, ENT_QUOTES) ?></label>
-                                                    </div>
-                                                    <?php endforeach; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <?php endforeach; ?>
-                                        <?php if (empty($salesHeader)): ?>
-                                        <div class="col-12">
-                                            <div class="alert alert-warning mb-0">No columns detected in the uploaded file.</div>
-                                        </div>
-                                        <?php endif; ?>
+                                <div>
+                                    <label class="<?= $labelClass ?>" for="password">Password</label>
+                                    <input class="<?= $inputClass ?>" type="password" id="password" name="password" required>
+                                </div>
+                                <button class="<?= $buttonPrimaryClass ?> w-full" type="submit">Sign in</button>
+                            </form>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Operations Overview</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Monitor inventory coverage, demand trends, and configuration across warehouses.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" class="<?= $buttonSecondaryClass ?>" data-section-trigger="imports">
+                                <span class="material-symbols-outlined text-base">upload_file</span>
+                                <span>Go to Imports</span>
+                            </button>
+                            <button type="button" class="<?= $buttonSecondaryClass ?>" data-section-trigger="parameters">
+                                <span class="material-symbols-outlined text-base">tune</span>
+                                <span>Adjust Parameters</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <section data-section="dashboard" class="space-y-8<?= $activeSection === 'dashboard' ? '' : ' hidden' ?>">
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+                            <div class="<?= $cardClass ?>">
+                                <p class="text-xs font-medium uppercase tracking-widest text-gray-500 dark:text-gray-400">Tracked SKUs</p>
+                                <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white" id="summaryItems">0</p>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">SKUs across selected filters</p>
+                            </div>
+                            <div class="<?= $cardClass ?>">
+                                <p class="text-xs font-medium uppercase tracking-widest text-gray-500 dark:text-gray-400">Total Reorder</p>
+                                <p class="mt-2 text-3xl font-bold text-primary" id="summaryReorder">0</p>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Units required to hit coverage targets</p>
+                            </div>
+                            <div class="<?= $cardClass ?>">
+                                <p class="text-xs font-medium uppercase tracking-widest text-gray-500 dark:text-gray-400">Low Coverage (&lt;= 7 days)</p>
+                                <p class="mt-2 text-3xl font-bold text-orange-500" id="summaryLowCover">0</p>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">SKUs below protection threshold</p>
+                            </div>
+                            <div class="<?= $cardClass ?>">
+                                <p class="text-xs font-medium uppercase tracking-widest text-gray-500 dark:text-gray-400">Warehouses</p>
+                                <p class="mt-2 text-3xl font-bold text-yellow-500" id="summaryWarehouses">0</p>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Active locations in focus</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
+                            <div class="<?= $cardClass ?>">
+                                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Demand &amp; Replenishment</h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Latest coverage by SKU and warehouse.</p>
                                     </div>
-                                    <div class="table-responsive mb-3">
-                                        <table class="table table-sm table-striped align-middle mb-0">
-                                            <thead>
-                                                <tr>
-                                                    <?php if ($salesHeaderCount > 0): ?>
-                                                        <?php foreach ($salesHeader as $columnLabel):
-                                                            $headerLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column';
-                                                        ?>
-                                                        <th><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
-                                                        <?php endforeach; ?>
-                                                    <?php else: ?>
-                                                        <th>Data</th>
-                                                    <?php endif; ?>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php if ($salesSampleCount > 0): ?>
-                                                    <?php foreach ($salesRows as $row): ?>
-                                                    <tr>
-                                                        <?php if ($salesHeaderCount > 0): ?>
-                                                            <?php for ($i = 0; $i < $salesHeaderCount; $i++): ?>
-                                                            <td><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
-                                                            <?php endfor; ?>
-                                                        <?php else: ?>
-                                                            <td><?= htmlspecialchars(implode(', ', array_map('strval', $row)), ENT_QUOTES) ?></td>
-                                                        <?php endif; ?>
-                                                    </tr>
-                                                    <?php endforeach; ?>
-                                                <?php else: ?>
-                                                    <tr>
-                                                        <td colspan="<?= max(1, $salesHeaderCount) ?>" class="text-center text-muted">No data rows detected.</td>
-                                                    </tr>
-                                                <?php endif; ?>
-                                            </tbody>
-                                        </table>
-                                        <p class="text-muted small mt-2 mb-0">Showing the first <?= $salesSampleCount ?> row<?= $salesSampleCount === 1 ? '' : 's' ?> from the file.</p>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-primary" type="submit">Import Sales</button>
-                                    </div>
-                                </form>
-                                <form method="post" class="mt-2">
-                                    <input type="hidden" name="action" value="cancel_sales_preview">
-                                    <button class="btn btn-link text-danger p-0" type="submit">Cancel preview</button>
-                                </form>
-                            <?php else: ?>
-                                <p class="text-muted">Upload a CSV for a single warehouse. After the upload you'll choose the columns for date, SKU, and quantity.</p>
-                                <form method="post" enctype="multipart/form-data">
-                                    <input type="hidden" name="action" value="preview_sales">
-                                    <div class="mb-3">
-                                        <label class="form-label" for="salesWarehouse">Warehouse</label>
-                                        <select class="form-select" id="salesWarehouse" name="warehouse_id" required>
-                                            <option value="">Select warehouse</option>
+                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                        <label class="sr-only" for="warehouseFilter">Warehouse</label>
+                                        <select id="warehouseFilter" name="warehouse_id" class="<?= $inputClass ?> sm:w-56">
+                                            <option value="">All Warehouses</option>
                                             <?php foreach ($warehouses as $warehouse): ?>
                                                 <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <label class="sr-only" for="skuFilter">SKU filter</label>
+                                        <input id="skuFilter" type="text" placeholder="Filter by SKU" class="<?= $inputClass ?> sm:w-48">
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label" for="salesCsv">Daily Sales CSV</label>
-                                        <input class="form-control" type="file" id="salesCsv" name="sales_csv" accept=".csv" required>
-                                        <div class="form-text">Ensure the file includes columns for sale date (YYYY-MM-DD), SKU, and quantity.</div>
-                                    </div>
-                                    <button class="btn btn-primary" type="submit">Preview Sales File</button>
-                                </form>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">Upload Stock Snapshot CSV</h5>
-                        </div>
-                        <div class="card-body">
-                            <?php if ($stockPreview): ?>
-                                <?php
-                                    $stockHeader = is_array($stockPreview['header'] ?? null) ? $stockPreview['header'] : [];
-                                    $stockRows = is_array($stockPreview['rows'] ?? null) ? $stockPreview['rows'] : [];
-                                    $stockHeaderCount = count($stockHeader);
-                                    $stockSampleCount = count($stockRows);
-                                    $stockWarehouseId = (int) ($stockPreview['warehouse_id'] ?? 0);
-                                    $stockWarehouseInfo = $warehouses[$stockWarehouseId] ?? null;
-                                    $stockWarehouseLabel = $stockWarehouseInfo
-                                        ? ($stockWarehouseInfo['code'] . ' · ' . $stockWarehouseInfo['name'])
-                                        : ('ID ' . $stockWarehouseId);
-                                    $stockColumnMap = is_array($stockPreview['column_map'] ?? null) ? $stockPreview['column_map'] : [];
-                                    $stockFields = ['sku' => 'SKU', 'quantity' => 'Quantity'];
-                                    $stockSnapshotDate = (string) ($stockPreview['snapshot_date'] ?? '');
-                                ?>
-                                <p class="text-muted">Preview the uploaded file and choose the columns for SKU and quantity.</p>
-                                <div class="mb-3 small">
-                                    <div><strong>Warehouse:</strong> <?= htmlspecialchars($stockWarehouseLabel, ENT_QUOTES) ?></div>
-                                    <div><strong>Snapshot date:</strong> <?= htmlspecialchars($stockSnapshotDate, ENT_QUOTES) ?></div>
-                                    <div><strong>File:</strong> <?= htmlspecialchars((string) ($stockPreview['filename'] ?? 'uploaded.csv'), ENT_QUOTES) ?></div>
-                                    <div><strong>Rows previewed:</strong> <?= $stockSampleCount ?></div>
                                 </div>
-                                <form method="post">
-                                    <input type="hidden" name="action" value="confirm_stock">
-                                    <div class="row g-3 mb-3">
-                                        <?php foreach ($stockHeader as $index => $columnLabel):
-                                            $displayLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column ' . ($index + 1);
-                                        ?>
-                                        <div class="col-md-4">
-                                            <div class="border rounded p-3 h-100">
-                                                <div class="small text-muted text-uppercase mb-1">Column <?= $index + 1 ?></div>
-                                                <div class="fw-semibold text-truncate" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>">
-                                                    <?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>
-                                                </div>
-                                                <div class="mt-2">
-                                                    <?php foreach ($stockFields as $fieldKey => $fieldLabel):
-                                                        $checked = isset($stockColumnMap[$fieldKey]) && (int) $stockColumnMap[$fieldKey] === (int) $index;
-                                                    ?>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input column-checkbox" type="checkbox" id="stock-<?= $fieldKey ?>-<?= $index ?>" name="column_map[<?= $fieldKey ?>]" value="<?= $index ?>" data-field="<?= $fieldKey ?>" <?= $checked ? 'checked' : '' ?>>
-                                                        <label class="form-check-label small" for="stock-<?= $fieldKey ?>-<?= $index ?>">Use as <?= htmlspecialchars($fieldLabel, ENT_QUOTES) ?></label>
-                                                    </div>
-                                                    <?php endforeach; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <?php endforeach; ?>
-                                        <?php if (empty($stockHeader)): ?>
-                                        <div class="col-12">
-                                            <div class="alert alert-warning mb-0">No columns detected in the uploaded file.</div>
-                                        </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="table-responsive mb-3">
-                                        <table class="table table-sm table-striped align-middle mb-0">
-                                            <thead>
-                                                <tr>
-                                                    <?php if ($stockHeaderCount > 0): ?>
-                                                        <?php foreach ($stockHeader as $columnLabel):
-                                                            $headerLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column';
-                                                        ?>
-                                                        <th><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
-                                                        <?php endforeach; ?>
-                                                    <?php else: ?>
-                                                        <th>Data</th>
-                                                    <?php endif; ?>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php if ($stockSampleCount > 0): ?>
-                                                    <?php foreach ($stockRows as $row): ?>
-                                                    <tr>
-                                                        <?php if ($stockHeaderCount > 0): ?>
-                                                            <?php for ($i = 0; $i < $stockHeaderCount; $i++): ?>
-                                                            <td><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
-                                                            <?php endfor; ?>
-                                                        <?php else: ?>
-                                                            <td><?= htmlspecialchars(implode(', ', array_map('strval', $row)), ENT_QUOTES) ?></td>
-                                                        <?php endif; ?>
-                                                    </tr>
-                                                    <?php endforeach; ?>
-                                                <?php else: ?>
-                                                    <tr>
-                                                        <td colspan="<?= max(1, $stockHeaderCount) ?>" class="text-center text-muted">No data rows detected.</td>
-                                                    </tr>
-                                                <?php endif; ?>
-                                            </tbody>
-                                        </table>
-                                        <p class="text-muted small mt-2 mb-0">Showing the first <?= $stockSampleCount ?> row<?= $stockSampleCount === 1 ? '' : 's' ?> from the file.</p>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-primary" type="submit">Import Stock</button>
-                                    </div>
-                                </form>
-                                <form method="post" class="mt-2">
-                                    <input type="hidden" name="action" value="cancel_stock_preview">
-                                    <button class="btn btn-link text-danger p-0" type="submit">Cancel preview</button>
-                                </form>
-                            <?php else: ?>
-                                <p class="text-muted">Upload a snapshot CSV for a single warehouse. After the upload you'll choose the columns for SKU and quantity.</p>
-                                <form method="post" enctype="multipart/form-data">
-                                    <input type="hidden" name="action" value="preview_stock">
-                                    <div class="mb-3">
-                                        <label class="form-label" for="stockWarehouse">Warehouse</label>
-                                        <select class="form-select" id="stockWarehouse" name="warehouse_id" required>
-                                            <option value="">Select warehouse</option>
-                                            <?php foreach ($warehouses as $warehouse): ?>
-                                                <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label" for="stockSnapshotDate">Snapshot Date</label>
-                                        <input class="form-control" type="date" id="stockSnapshotDate" name="snapshot_date" required>
-                                        <div class="form-text">All rows in the file will be imported with this snapshot date.</div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label" for="stockCsv">Stock Snapshot CSV</label>
-                                        <input class="form-control" type="file" id="stockCsv" name="stock_csv" accept=".csv" required>
-                                        <div class="form-text">Ensure the file includes columns for SKU and quantity.</div>
-                                    </div>
-                                    <button class="btn btn-primary" type="submit">Preview Stock File</button>
-                                </form>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="section-warehouses"<?= $activeSection === 'warehouses' ? '' : ' class="d-none"' ?>>
-            <div class="row g-4">
-                <div class="col-lg-4">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">Add Warehouse</h5>
-                        </div>
-                        <div class="card-body">
-                            <form method="post">
-                                <input type="hidden" name="action" value="add_warehouse">
-                                <div class="mb-3">
-                                    <label class="form-label" for="warehouse_code">Code</label>
-                                    <input class="form-control" type="text" id="warehouse_code" name="warehouse_code" maxlength="50" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label" for="warehouse_name">Name</label>
-                                    <input class="form-control" type="text" id="warehouse_name" name="warehouse_name" maxlength="120" placeholder="Optional">
-                                </div>
-                                <p class="form-text">Codes must be unique. Warehouses are also created automatically during CSV imports.</p>
-                                <button class="btn btn-primary" type="submit">Save Warehouse</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-8">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">Existing Warehouses</h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Code</th>
-                                            <th>Name</th>
-                                            <th>Created</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($warehouses as $warehouse):
-                                            $createdLabel = '—';
-                                            if (!empty($warehouse['created_at'])) {
-                                                try {
-                                                    $createdLabel = (new \DateTimeImmutable($warehouse['created_at']))->format('Y-m-d H:i');
-                                                } catch (\Exception $e) {
-                                                    $createdLabel = $warehouse['created_at'];
-                                                }
-                                            }
-                                        ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
-                                            <td><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
-                                            <td><?= htmlspecialchars($createdLabel, ENT_QUOTES) ?></td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                        <?php if (empty($warehouses)): ?>
-                                        <tr>
-                                            <td colspan="3" class="text-center text-muted py-3">No warehouses yet.</td>
-                                        </tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="section-parameters"<?= $activeSection === 'parameters' ? '' : ' class="d-none"' ?>>
-            <div class="row g-4">
-                <div class="col-12 col-xl-8 col-xxl-7">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">Edit Parameters</h5>
-                        </div>
-                        <div class="card-body">
-                            <form class="row g-3" method="post">
-                                <input type="hidden" name="action" value="save_parameters">
-                                <div class="col-md-6">
-                                    <label class="form-label" for="paramWarehouse">Warehouse</label>
-                                    <select class="form-select" id="paramWarehouse" name="warehouse_id" required>
-                                        <option value="">Select warehouse</option>
-                                        <?php foreach ($warehouses as $warehouse): ?>
-                                            <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="paramSku">SKU Override <span class="text-muted">(optional)</span></label>
-                                    <input class="form-control" type="text" id="paramSku" name="sku" placeholder="Leave blank for warehouse default">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label" for="paramDaysCover">Days to Cover</label>
-                                    <input class="form-control" type="number" min="1" id="paramDaysCover" name="days_to_cover" value="<?= (int) $defaults['days_to_cover'] ?>" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label" for="paramWindow">MA Window (days)</label>
-                                    <input class="form-control" type="number" min="1" id="paramWindow" name="ma_window_days" value="<?= (int) $defaults['ma_window_days'] ?>" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label" for="paramMinAvg">Min Avg Daily</label>
-                                    <input class="form-control" type="number" step="0.01" min="0" id="paramMinAvg" name="min_avg_daily" value="<?= htmlspecialchars((string) $defaults['min_avg_daily'], ENT_QUOTES) ?>" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label" for="paramSafety">Safety Days</label>
-                                    <input class="form-control" type="number" step="0.01" min="0" id="paramSafety" name="safety_days" value="<?= htmlspecialchars((string) $defaults['safety_days'], ENT_QUOTES) ?>" required>
-                                </div>
-                                <div class="col-12">
-                                    <button class="btn btn-primary" type="submit">Save Parameters</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-4 mt-1">
-                <div class="col-lg-6">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">Warehouse Parameters</h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Warehouse</th>
-                                            <th>Days to Cover</th>
-                                            <th>MA Window</th>
-                                            <th>Min Avg</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($warehouses as $warehouse):
-                                            $params = $warehouseParams[$warehouse['id']] ?? $defaults;
-                                        ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></td>
-                                            <td><?= (int) $params['days_to_cover'] ?></td>
-                                            <td><?= (int) $params['ma_window_days'] ?></td>
-                                            <td><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                        <?php if (empty($warehouses)): ?>
-                                        <tr>
-                                            <td colspan="4" class="text-center text-muted py-3">No warehouses yet.</td>
-                                        </tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">SKU Overrides</h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Warehouse</th>
-                                            <th>SKU</th>
-                                            <th>Days to Cover</th>
-                                            <th>MA Window</th>
-                                            <th>Min Avg</th>
-                                            <th>Safety Days</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if (!empty($skuParams)):
-                                            foreach ($skuParams as $warehouseId => $items):
-                                                $warehouse = $warehouses[$warehouseId] ?? null;
-                                                if (!$warehouse) {
-                                                    continue;
-                                                }
-                                                foreach ($items as $skuCode => $params): ?>
-                                                    <tr>
-                                                        <td><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
-                                                        <td><?= htmlspecialchars($skuCode, ENT_QUOTES) ?></td>
-                                                        <td><?= (int) $params['days_to_cover'] ?></td>
-                                                        <td><?= (int) $params['ma_window_days'] ?></td>
-                                                        <td><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
-                                                        <td><?= htmlspecialchars(number_format((float) $params['safety_days'], 2), ENT_QUOTES) ?></td>
-                                                        <td>
-                                                            <form method="post" class="d-inline">
-                                                                <input type="hidden" name="action" value="delete_sku_param">
-                                                                <input type="hidden" name="warehouse_id" value="<?= (int) $warehouseId ?>">
-                                                                <input type="hidden" name="sku" value="<?= htmlspecialchars($skuCode, ENT_QUOTES) ?>">
-                                                                <button class="btn btn-link btn-sm text-danger" type="submit">Remove</button>
-                                                            </form>
-                                                        </td>
-                                                    </tr>
-                                                <?php endforeach;
-                                            endforeach;
-                                        else: ?>
-                                            <tr>
-                                                <td colspan="7" class="text-center text-muted py-3">No SKU overrides configured.</td>
+                                <div class="mt-6 overflow-x-auto">
+                                    <table id="demandTable" class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
+                                        <thead>
+                                            <tr class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                                <th class="px-4 py-3 text-left font-semibold">Warehouse</th>
+                                                <th class="px-4 py-3 text-left font-semibold">SKU</th>
+                                                <th class="px-4 py-3 text-left font-semibold">On-hand</th>
+                                                <th class="px-4 py-3 text-left font-semibold">Moving Avg</th>
+                                                <th class="px-4 py-3 text-left font-semibold">Days of Cover</th>
+                                                <th class="px-4 py-3 text-left font-semibold">Reorder Qty</th>
                                             </tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody class="divide-y divide-black/5 dark:divide-white/10"></tbody>
+                                    </table>
+                                    <div id="demandEmptyState" class="hidden py-10 text-center text-sm text-gray-500 dark:text-gray-400">No SKUs found for the selected filters.</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-6">
+                                <div class="<?= $cardClass ?>">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Reorder Highlights</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Top 10 SKUs ranked by reorder quantity.</p>
+                                    <div class="mt-4 h-48">
+                                        <canvas id="reorderChart"></canvas>
+                                        <div id="reorderEmptyState" class="hidden py-6 text-center text-sm text-gray-500 dark:text-gray-400">Upload demand and stock data to see reorder insights.</div>
+                                    </div>
+                                </div>
+                                <div class="<?= $cardClass ?>">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Rolling Demand Trend</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Select a SKU row to visualize its recent daily demand.</p>
+                                    <div class="mt-4 h-48">
+                                        <canvas id="trendChart"></canvas>
+                                        <div id="trendEmptyState" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">Choose a SKU from the table to explore its demand pattern.</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </section>
+
+                    <section data-section="imports" class="space-y-6<?= $activeSection === 'imports' ? '' : ' hidden' ?>">
+                        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            <div class="<?= $cardClass ?>">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Daily Sales CSV</h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Upload a file and map the sale date, SKU, and quantity columns.</p>
+                                    </div>
+                                    <?php if ($salesPreview): ?>
+                                    <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Preview ready</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="mt-6 space-y-6">
+                                    <?php if ($salesPreview): ?>
+                                        <?php
+                                            $salesHeader = is_array($salesPreview['header'] ?? null) ? $salesPreview['header'] : [];
+                                            $salesRows = is_array($salesPreview['rows'] ?? null) ? $salesPreview['rows'] : [];
+                                            $salesHeaderCount = count($salesHeader);
+                                            $salesSampleCount = count($salesRows);
+                                            $salesWarehouseId = (int) ($salesPreview['warehouse_id'] ?? 0);
+                                            $salesWarehouseInfo = $warehouses[$salesWarehouseId] ?? null;
+                                            $salesWarehouseLabel = $salesWarehouseInfo
+                                                ? ($salesWarehouseInfo['code'] . ' · ' . $salesWarehouseInfo['name'])
+                                                : ('ID ' . $salesWarehouseId);
+                                            $salesColumnMap = is_array($salesPreview['column_map'] ?? null) ? $salesPreview['column_map'] : [];
+                                            $salesFields = ['sale_date' => 'Sale Date', 'sku' => 'SKU', 'quantity' => 'Quantity'];
+                                        ?>
+                                        <div class="grid gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Warehouse</p>
+                                                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($salesWarehouseLabel, ENT_QUOTES) ?></p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">File</p>
+                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300"><?= htmlspecialchars((string) ($salesPreview['filename'] ?? 'uploaded.csv'), ENT_QUOTES) ?></p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Rows previewed</p>
+                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300"><?= $salesSampleCount ?></p>
+                                            </div>
+                                        </div>
+                                        <form method="post" class="space-y-6">
+                                            <input type="hidden" name="action" value="confirm_sales">
+                                            <div class="grid gap-4 md:grid-cols-3">
+                                                <?php foreach ($salesHeader as $index => $columnLabel):
+                                                    $displayLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column ' . ($index + 1);
+                                                ?>
+                                                <div class="flex flex-col gap-2 rounded-xl border border-black/10 bg-white/70 p-4 text-sm shadow-sm dark:border-white/10 dark:bg-white/5">
+                                                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Column <?= $index + 1 ?></p>
+                                                    <p class="truncate font-medium text-gray-900 dark:text-gray-100" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>"><?= htmlspecialchars($displayLabel, ENT_QUOTES) ?></p>
+                                                    <div class="mt-2 space-y-2">
+                                                        <?php foreach ($salesFields as $fieldKey => $fieldLabel):
+                                                            $checked = isset($salesColumnMap[$fieldKey]) && (int) $salesColumnMap[$fieldKey] === (int) $index;
+                                                        ?>
+                                                        <label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
+                                                            <input class="<?= $checkboxClass ?> column-checkbox" type="checkbox" id="sales-<?= $fieldKey ?>-<?= $index ?>" name="column_map[<?= $fieldKey ?>]" value="<?= $index ?>" data-field="<?= $fieldKey ?>" <?= $checked ? 'checked' : '' ?>>
+                                                            <span>Use as <?= htmlspecialchars($fieldLabel, ENT_QUOTES) ?></span>
+                                                        </label>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                            <?php if (empty($salesHeader)): ?>
+                                            <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-400/60 dark:bg-amber-500/10 dark:text-amber-100">No columns detected in the uploaded file.</div>
+                                            <?php endif; ?>
+                                            <div class="overflow-x-auto rounded-xl border border-black/10 dark:border-white/10">
+                                                <table class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
+                                                    <thead class="bg-black/5 dark:bg-white/5">
+                                                        <tr>
+                                                            <?php if ($salesHeaderCount > 0): ?>
+                                                                <?php foreach ($salesHeader as $columnLabel):
+                                                                    $headerLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column';
+                                                                ?>
+                                                                <th class="px-4 py-2 text-left font-semibold uppercase tracking-wide text-xs text-gray-500 dark:text-gray-400"><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
+                                                                <?php endforeach; ?>
+                                                            <?php else: ?>
+                                                                <th class="px-4 py-2 text-left font-semibold uppercase tracking-wide text-xs text-gray-500 dark:text-gray-400">Data</th>
+                                                            <?php endif; ?>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-black/5 dark:divide-white/10">
+                                                        <?php if ($salesSampleCount > 0): ?>
+                                                            <?php foreach ($salesRows as $row): ?>
+                                                            <tr class="bg-white/70 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
+                                                                <?php if ($salesHeaderCount > 0): ?>
+                                                                    <?php for ($i = 0; $i < $salesHeaderCount; $i++): ?>
+                                                                    <td class="px-4 py-2"><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
+                                                                    <?php endfor; ?>
+                                                                <?php else: ?>
+                                                                    <td class="px-4 py-2"><?= htmlspecialchars(implode(', ', array_map('strval', $row)), ENT_QUOTES) ?></td>
+                                                                <?php endif; ?>
+                                                            </tr>
+                                                            <?php endforeach; ?>
+                                                        <?php else: ?>
+                                                            <tr>
+                                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No data rows detected.</td>
+                                                            </tr>
+                                                        <?php endif; ?>
+                                                    </tbody>
+                                                </table>
+                                                <p class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">Showing the first <?= $salesSampleCount ?> row<?= $salesSampleCount === 1 ? '' : 's' ?> from the file.</p>
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                <button class="<?= $buttonPrimaryClass ?>" type="submit">Import Sales</button>
+                                            </div>
+                                        </form>
+                                        <form method="post" class="mt-2">
+                                            <input type="hidden" name="action" value="cancel_sales_preview">
+                                            <button class="inline-flex items-center text-sm font-semibold text-rose-500 transition hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400/40" type="submit">Cancel preview</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <form method="post" enctype="multipart/form-data" class="space-y-4">
+                                            <input type="hidden" name="action" value="preview_sales">
+                                            <div>
+                                                <label class="<?= $labelClass ?>" for="salesWarehouse">Warehouse</label>
+                                                <select class="<?= $inputClass ?>" id="salesWarehouse" name="warehouse_id" required>
+                                                    <option value="">Select warehouse</option>
+                                                    <?php foreach ($warehouses as $warehouse): ?>
+                                                        <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="<?= $labelClass ?>" for="salesCsv">Daily Sales CSV</label>
+                                                <input class="<?= $inputClass ?>" type="file" id="salesCsv" name="sales_csv" accept=".csv" required>
+                                                <p class="<?= $helperClass ?>">Include sale date (YYYY-MM-DD), SKU, and quantity columns.</p>
+                                            </div>
+                                            <button class="<?= $buttonPrimaryClass ?>" type="submit">Preview Sales File</button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <div class="<?= $cardClass ?>">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Stock Snapshot CSV</h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Provide the latest stock position and map SKU and quantity columns.</p>
+                                    </div>
+                                    <?php if ($stockPreview): ?>
+                                    <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Preview ready</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="mt-6 space-y-6">
+                                    <?php if ($stockPreview): ?>
+                                        <?php
+                                            $stockHeader = is_array($stockPreview['header'] ?? null) ? $stockPreview['header'] : [];
+                                            $stockRows = is_array($stockPreview['rows'] ?? null) ? $stockPreview['rows'] : [];
+                                            $stockHeaderCount = count($stockHeader);
+                                            $stockSampleCount = count($stockRows);
+                                            $stockWarehouseId = (int) ($stockPreview['warehouse_id'] ?? 0);
+                                            $stockWarehouseInfo = $warehouses[$stockWarehouseId] ?? null;
+                                            $stockWarehouseLabel = $stockWarehouseInfo
+                                                ? ($stockWarehouseInfo['code'] . ' · ' . $stockWarehouseInfo['name'])
+                                                : ('ID ' . $stockWarehouseId);
+                                            $stockColumnMap = is_array($stockPreview['column_map'] ?? null) ? $stockPreview['column_map'] : [];
+                                            $stockFields = ['sku' => 'SKU', 'quantity' => 'Quantity'];
+                                            $stockSnapshotDate = (string) ($stockPreview['snapshot_date'] ?? '');
+                                        ?>
+                                        <div class="grid gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Warehouse</p>
+                                                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($stockWarehouseLabel, ENT_QUOTES) ?></p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Snapshot date</p>
+                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300"><?= htmlspecialchars($stockSnapshotDate, ENT_QUOTES) ?></p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">File</p>
+                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300"><?= htmlspecialchars((string) ($stockPreview['filename'] ?? 'uploaded.csv'), ENT_QUOTES) ?></p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Rows previewed</p>
+                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300"><?= $stockSampleCount ?></p>
+                                            </div>
+                                        </div>
+                                        <form method="post" class="space-y-6">
+                                            <input type="hidden" name="action" value="confirm_stock">
+                                            <div class="grid gap-4 md:grid-cols-3">
+                                                <?php foreach ($stockHeader as $index => $columnLabel):
+                                                    $displayLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column ' . ($index + 1);
+                                                ?>
+                                                <div class="flex flex-col gap-2 rounded-xl border border-black/10 bg-white/70 p-4 text-sm shadow-sm dark:border-white/10 dark:bg-white/5">
+                                                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Column <?= $index + 1 ?></p>
+                                                    <p class="truncate font-medium text-gray-900 dark:text-gray-100" title="<?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>"><?= htmlspecialchars($displayLabel, ENT_QUOTES) ?></p>
+                                                    <div class="mt-2 space-y-2">
+                                                        <?php foreach ($stockFields as $fieldKey => $fieldLabel):
+                                                            $checked = isset($stockColumnMap[$fieldKey]) && (int) $stockColumnMap[$fieldKey] === (int) $index;
+                                                        ?>
+                                                        <label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
+                                                            <input class="<?= $checkboxClass ?> column-checkbox" type="checkbox" id="stock-<?= $fieldKey ?>-<?= $index ?>" name="column_map[<?= $fieldKey ?>]" value="<?= $index ?>" data-field="<?= $fieldKey ?>" <?= $checked ? 'checked' : '' ?>>
+                                                            <span>Use as <?= htmlspecialchars($fieldLabel, ENT_QUOTES) ?></span>
+                                                        </label>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                            <?php if (empty($stockHeader)): ?>
+                                            <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-400/60 dark:bg-amber-500/10 dark:text-amber-100">No columns detected in the uploaded file.</div>
+                                            <?php endif; ?>
+                                            <div class="overflow-x-auto rounded-xl border border-black/10 dark:border-white/10">
+                                                <table class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
+                                                    <thead class="bg-black/5 dark:bg-white/5">
+                                                        <tr>
+                                                            <?php if ($stockHeaderCount > 0): ?>
+                                                                <?php foreach ($stockHeader as $columnLabel):
+                                                                    $headerLabel = trim((string) $columnLabel) !== '' ? (string) $columnLabel : 'Column';
+                                                                ?>
+                                                                <th class="px-4 py-2 text-left font-semibold uppercase tracking-wide text-xs text-gray-500 dark:text-gray-400"><?= htmlspecialchars($headerLabel, ENT_QUOTES) ?></th>
+                                                                <?php endforeach; ?>
+                                                            <?php else: ?>
+                                                                <th class="px-4 py-2 text-left font-semibold uppercase tracking-wide text-xs text-gray-500 dark:text-gray-400">Data</th>
+                                                            <?php endif; ?>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-black/5 dark:divide-white/10">
+                                                        <?php if ($stockSampleCount > 0): ?>
+                                                            <?php foreach ($stockRows as $row): ?>
+                                                            <tr class="bg-white/70 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
+                                                                <?php if ($stockHeaderCount > 0): ?>
+                                                                    <?php for ($i = 0; $i < $stockHeaderCount; $i++): ?>
+                                                                    <td class="px-4 py-2"><?= htmlspecialchars((string) ($row[$i] ?? ''), ENT_QUOTES) ?></td>
+                                                                    <?php endfor; ?>
+                                                                <?php else: ?>
+                                                                    <td class="px-4 py-2"><?= htmlspecialchars(implode(', ', array_map('strval', $row)), ENT_QUOTES) ?></td>
+                                                                <?php endif; ?>
+                                                            </tr>
+                                                            <?php endforeach; ?>
+                                                        <?php else: ?>
+                                                            <tr>
+                                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No data rows detected.</td>
+                                                            </tr>
+                                                        <?php endif; ?>
+                                                    </tbody>
+                                                </table>
+                                                <p class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">Showing the first <?= $stockSampleCount ?> row<?= $stockSampleCount === 1 ? '' : 's' ?> from the file.</p>
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                <button class="<?= $buttonPrimaryClass ?>" type="submit">Import Stock</button>
+                                            </div>
+                                        </form>
+                                        <form method="post" class="mt-2">
+                                            <input type="hidden" name="action" value="cancel_stock_preview">
+                                            <button class="inline-flex items-center text-sm font-semibold text-rose-500 transition hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400/40" type="submit">Cancel preview</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <form method="post" enctype="multipart/form-data" class="space-y-4">
+                                            <input type="hidden" name="action" value="preview_stock">
+                                            <div>
+                                                <label class="<?= $labelClass ?>" for="stockWarehouse">Warehouse</label>
+                                                <select class="<?= $inputClass ?>" id="stockWarehouse" name="warehouse_id" required>
+                                                    <option value="">Select warehouse</option>
+                                                    <?php foreach ($warehouses as $warehouse): ?>
+                                                        <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="<?= $labelClass ?>" for="snapshotDate">Snapshot Date</label>
+                                                <input class="<?= $inputClass ?>" type="date" id="snapshotDate" name="snapshot_date" required>
+                                            </div>
+                                            <div>
+                                                <label class="<?= $labelClass ?>" for="stockCsv">Stock CSV</label>
+                                                <input class="<?= $inputClass ?>" type="file" id="stockCsv" name="stock_csv" accept=".csv" required>
+                                                <p class="<?= $helperClass ?>">Include SKU and quantity columns representing the stock snapshot.</p>
+                                            </div>
+                                            <button class="<?= $buttonPrimaryClass ?>" type="submit">Preview Stock File</button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section data-section="warehouses" class="space-y-6<?= $activeSection === 'warehouses' ? '' : ' hidden' ?>">
+                        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
+                            <div class="<?= $cardClass ?>">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Add or Update Warehouse</h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Create new warehouses or update existing codes and names.</p>
+                                <form method="post" class="mt-6 space-y-4">
+                                    <input type="hidden" name="action" value="add_warehouse">
+                                    <div>
+                                        <label class="<?= $labelClass ?>" for="warehouseCode">Warehouse Code</label>
+                                        <input class="<?= $inputClass ?>" type="text" id="warehouseCode" name="warehouse_code" maxlength="50" required>
+                                    </div>
+                                    <div>
+                                        <label class="<?= $labelClass ?>" for="warehouseName">Warehouse Name</label>
+                                        <input class="<?= $inputClass ?>" type="text" id="warehouseName" name="warehouse_name" maxlength="120" placeholder="Optional name">
+                                    </div>
+                                    <button class="<?= $buttonPrimaryClass ?>" type="submit">Save Warehouse</button>
+                                </form>
+                            </div>
+                            <div class="<?= $cardClass ?>">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Existing Warehouses</h3>
+                                <div class="mt-4 overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
+                                        <thead class="bg-black/5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left">Code</th>
+                                                <th class="px-4 py-3 text-left">Name</th>
+                                                <th class="px-4 py-3 text-left">Created</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-black/5 dark:divide-white/10">
+                                            <?php foreach ($warehouses as $warehouse):
+                                                $createdLabel = '—';
+                                                if (!empty($warehouse['created_at'])) {
+                                                    try {
+                                                        $createdLabel = (new \DateTimeImmutable($warehouse['created_at']))->format('Y-m-d H:i');
+                                                    } catch (\Exception $e) {
+                                                        $createdLabel = $warehouse['created_at'];
+                                                    }
+                                                }
+                                            ?>
+                                            <tr class="bg-white/70 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
+                                                <td class="px-4 py-2 font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
+                                                <td class="px-4 py-2"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
+                                                <td class="px-4 py-2 text-gray-500 dark:text-gray-400"><?= htmlspecialchars($createdLabel, ENT_QUOTES) ?></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                            <?php if (empty($warehouses)): ?>
+                                            <tr>
+                                                <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="3">No warehouses yet.</td>
+                                            </tr>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section data-section="parameters" class="space-y-6<?= $activeSection === 'parameters' ? '' : ' hidden' ?>">
+                        <div class="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
+                            <div class="<?= $cardClass ?>">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Parameters</h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Set global warehouse defaults or override a specific SKU.</p>
+                                <form method="post" class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                    <input type="hidden" name="action" value="save_parameters">
+                                    <div class="md:col-span-1 xl:col-span-1">
+                                        <label class="<?= $labelClass ?>" for="paramWarehouse">Warehouse</label>
+                                        <select class="<?= $inputClass ?>" id="paramWarehouse" name="warehouse_id" required>
+                                            <option value="">Select warehouse</option>
+                                            <?php foreach ($warehouses as $warehouse): ?>
+                                                <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="md:col-span-1 xl:col-span-2">
+                                        <label class="<?= $labelClass ?>" for="paramSku">SKU Override <span class="font-normal text-gray-500 dark:text-gray-400">(optional)</span></label>
+                                        <input class="<?= $inputClass ?>" type="text" id="paramSku" name="sku" placeholder="Leave blank for warehouse default">
+                                    </div>
+                                    <div>
+                                        <label class="<?= $labelClass ?>" for="paramDaysCover">Days to Cover</label>
+                                        <input class="<?= $inputClass ?>" type="number" min="1" id="paramDaysCover" name="days_to_cover" value="<?= (int) $defaults['days_to_cover'] ?>" required>
+                                    </div>
+                                    <div>
+                                        <label class="<?= $labelClass ?>" for="paramWindow">MA Window (days)</label>
+                                        <input class="<?= $inputClass ?>" type="number" min="1" id="paramWindow" name="ma_window_days" value="<?= (int) $defaults['ma_window_days'] ?>" required>
+                                    </div>
+                                    <div>
+                                        <label class="<?= $labelClass ?>" for="paramMinAvg">Min Avg Daily</label>
+                                        <input class="<?= $inputClass ?>" type="number" step="0.01" min="0" id="paramMinAvg" name="min_avg_daily" value="<?= htmlspecialchars((string) $defaults['min_avg_daily'], ENT_QUOTES) ?>" required>
+                                    </div>
+                                    <div>
+                                        <label class="<?= $labelClass ?>" for="paramSafety">Safety Days</label>
+                                        <input class="<?= $inputClass ?>" type="number" step="0.01" min="0" id="paramSafety" name="safety_days" value="<?= htmlspecialchars((string) $defaults['safety_days'], ENT_QUOTES) ?>" required>
+                                    </div>
+                                    <div class="md:col-span-2 xl:col-span-3">
+                                        <button class="<?= $buttonPrimaryClass ?>" type="submit">Save Parameters</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="flex flex-col gap-6">
+                                <div class="<?= $cardClass ?>">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Warehouse Parameters</h3>
+                                    <div class="mt-4 overflow-x-auto">
+                                        <table class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
+                                            <thead class="bg-black/5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                                                <tr>
+                                                    <th class="px-4 py-3 text-left">Warehouse</th>
+                                                    <th class="px-4 py-3 text-left">Days to Cover</th>
+                                                    <th class="px-4 py-3 text-left">MA Window</th>
+                                                    <th class="px-4 py-3 text-left">Min Avg</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-black/5 dark:divide-white/10">
+                                                <?php foreach ($warehouses as $warehouse):
+                                                    $params = $warehouseParams[$warehouse['id']] ?? $defaults;
+                                                ?>
+                                                <tr class="bg-white/70 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
+                                                    <td class="px-4 py-2 font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></td>
+                                                    <td class="px-4 py-2"><?= (int) $params['days_to_cover'] ?></td>
+                                                    <td class="px-4 py-2"><?= (int) $params['ma_window_days'] ?></td>
+                                                    <td class="px-4 py-2"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                                <?php if (empty($warehouses)): ?>
+                                                <tr>
+                                                    <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="4">No warehouses configured yet.</td>
+                                                </tr>
+                                                <?php endif; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="<?= $cardClass ?>">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">SKU Overrides</h3>
+                                    <div class="mt-4 overflow-x-auto">
+                                        <table class="min-w-full divide-y divide-black/10 text-sm text-gray-700 dark:divide-white/10 dark:text-gray-200">
+                                            <thead class="bg-black/5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                                                <tr>
+                                                    <th class="px-4 py-3 text-left">Warehouse</th>
+                                                    <th class="px-4 py-3 text-left">SKU</th>
+                                                    <th class="px-4 py-3 text-left">Days to Cover</th>
+                                                    <th class="px-4 py-3 text-left">MA Window</th>
+                                                    <th class="px-4 py-3 text-left">Min Avg</th>
+                                                    <th class="px-4 py-3 text-left">Safety Days</th>
+                                                    <th class="px-4 py-3 text-left"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-black/5 dark:divide-white/10">
+                                                <?php if (!empty($skuParams)):
+                                                    foreach ($skuParams as $warehouseId => $items):
+                                                        $warehouse = $warehouses[$warehouseId] ?? null;
+                                                        if (!$warehouse) {
+                                                            continue;
+                                                        }
+                                                        foreach ($items as $skuCode => $params): ?>
+                                                            <tr class="bg-white/70 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
+                                                                <td class="px-4 py-2 font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2"><?= htmlspecialchars($skuCode, ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2"><?= (int) $params['days_to_cover'] ?></td>
+                                                                <td class="px-4 py-2"><?= (int) $params['ma_window_days'] ?></td>
+                                                                <td class="px-4 py-2"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2"><?= htmlspecialchars(number_format((float) $params['safety_days'], 2), ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2">
+                                                                    <form method="post">
+                                                                        <input type="hidden" name="action" value="delete_sku_param">
+                                                                        <input type="hidden" name="warehouse_id" value="<?= (int) $warehouseId ?>">
+                                                                        <input type="hidden" name="sku" value="<?= htmlspecialchars($skuCode, ENT_QUOTES) ?>">
+                                                                        <button class="inline-flex items-center text-sm font-semibold text-rose-500 transition hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400/40" type="submit">Remove</button>
+                                                                    </form>
+                                                                </td>
+                                                            </tr>
+                                                        <?php endforeach;
+                                                    endforeach;
+                                                else: ?>
+                                                    <tr>
+                                                        <td class="px-4 py-6 text-center text-gray-500 dark:text-gray-400" colspan="7">No SKU overrides configured.</td>
+                                                    </tr>
+                                                <?php endif; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                <?php endif; ?>
             </div>
-        </section>
-    <?php endif; ?>
-</div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const sectionTriggers = document.querySelectorAll('[data-section-trigger]');
+        const navButtons = document.querySelectorAll('.section-tab[data-section-trigger]');
+        const sections = document.querySelectorAll('section[data-section]');
+        const ACTIVE_CLASSES = ['bg-primary', 'text-white', 'shadow-sm'];
+        const INACTIVE_CLASSES = ['text-gray-600', 'hover:bg-primary/10', 'hover:text-primary', 'dark:text-gray-300', 'dark:hover:text-primary'];
+        let reorderChart;
+        let trendChart;
+        let currentRowsMap = new Map();
+        let selectedRowEl = null;
+        const integerFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-    const sections = document.querySelectorAll('section[id^="section-"]');
-    document.querySelectorAll('#dashboardTabs .nav-link').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('#dashboardTabs .nav-link').forEach((link) => link.classList.remove('active'));
-            btn.classList.add('active');
-            const sectionId = 'section-' + btn.dataset.section;
+        function setActiveSection(id) {
             sections.forEach((section) => {
-                if (section.id === sectionId) {
-                    section.classList.remove('d-none');
-                } else {
-                    section.classList.add('d-none');
-                }
+                const isActive = section.dataset.section === id;
+                section.classList.toggle('hidden', !isActive);
             });
-        });
-    });
-
-    let demandTable;
-    let reorderChart;
-    let trendChart;
-    let currentRowsMap = new Map();
-    const integerFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
-
-    function normalizeDaysValue(value) {
-        if (value === null || value === undefined) {
-            return null;
-        }
-        if (typeof value === 'string' && value.trim() === '') {
-            return null;
-        }
-        const numericValue = Number(value);
-        if (!Number.isFinite(numericValue)) {
-            return null;
-        }
-        return numericValue;
-    }
-
-    function createDaysBadge(value, normalizedValue) {
-        const numericValue = normalizedValue ?? normalizeDaysValue(value);
-        if (numericValue === null) {
-            return '<span class="badge rounded-pill text-bg-secondary">—</span>';
-        }
-        const rounded = Math.round(numericValue);
-        const label = integerFormatter.format(rounded);
-        if (rounded <= 0) {
-            return `<span class="badge rounded-pill text-bg-danger">${label}</span>`;
-        }
-        if (rounded <= 5) {
-            return `<span class="badge rounded-pill text-bg-warning text-dark">${label}</span>`;
-        }
-        return `<span class="badge rounded-pill text-bg-success">${label}</span>`;
-    }
-
-    function refreshDashboard() {
-        const warehouseId = document.getElementById('warehouseFilter').value;
-        const skuFilter = document.getElementById('skuFilter').value.trim();
-        const params = new URLSearchParams();
-        if (warehouseId) params.append('warehouse_id', warehouseId);
-        if (skuFilter) params.append('sku', skuFilter);
-
-        const query = params.toString();
-        const url = 'api.php' + (query ? '?' + query : '');
-        fetch(url, { credentials: 'same-origin' })
-            .then((response) => response.json())
-            .then((payload) => {
-                const rows = payload.data || [];
-                currentRowsMap = new Map();
-                demandTable.clear();
-                rows.forEach((row) => {
-                    const key = `${row.warehouse_id}|${row.sku}`;
-                    currentRowsMap.set(key, row);
-                    demandTable.row.add([
-                        `${row.warehouse_code} · ${row.warehouse_name}`,
-                        row.sku,
-                        row.current_stock,
-                        row.moving_average,
-                        row.days_of_cover,
-                        row.reorder_qty,
-                        key,
-                    ]);
-                });
-                demandTable.draw();
-
-                document.getElementById('summaryItems').textContent = rows.length;
-                const totalReorder = rows.reduce((sum, row) => {
-                    const value = Number(row.reorder_qty);
-                    return Number.isFinite(value) ? sum + value : sum;
-                }, 0);
-                document.getElementById('summaryReorder').textContent = Math.round(totalReorder)
-                    .toLocaleString('en-GB', { maximumFractionDigits: 0 });
-
-                const topRows = [...rows].sort((a, b) => b.reorder_qty - a.reorder_qty).slice(0, 10);
-                const labels = topRows.map((row) => `${row.warehouse_code}-${row.sku}`);
-                const values = topRows.map((row) => row.reorder_qty);
-
-                if (reorderChart) {
-                    reorderChart.destroy();
-                }
-                const ctx = document.getElementById('reorderChart');
-                reorderChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels,
-                        datasets: [{
-                            label: 'Reorder Qty',
-                            data: values,
-                            backgroundColor: '#00979d',
-                        }],
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: { beginAtZero: true },
-                        },
-                    },
-                });
-
-                const summaryBody = document.getElementById('summaryItems').closest('.card-body');
-                if (summaryBody) {
-                    summaryBody.classList.toggle('text-muted', rows.length === 0);
-                }
-
-                if (trendChart) {
-                    trendChart.destroy();
-                }
-                renderTrendSeries();
-
-                $('#demandTable tbody').off('click').on('click', 'tr', function () {
-                    const data = demandTable.row(this).data();
-                    if (!data) return;
-                    const key = data[6];
-                    const detail = currentRowsMap.get(key);
-                    if (!detail) return;
-                    renderTrendSeries(detail);
-                });
-            })
-            .catch((error) => {
-                console.error('Failed to load dashboard data', error);
+            navButtons.forEach((button) => {
+                const isActive = button.dataset.sectionTrigger === id;
+                button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                ACTIVE_CLASSES.forEach((cls) => button.classList.toggle(cls, isActive));
+                INACTIVE_CLASSES.forEach((cls) => button.classList.toggle(cls, !isActive));
             });
-    }
-
-    function renderTrendSeries(row) {
-        const ctx = document.getElementById('trendChart');
-        if (trendChart) {
-            trendChart.destroy();
         }
-        if (!row) {
-            trendChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{ data: [], borderColor: '#006F7A', tension: 0.3, fill: false }],
-                },
-                options: {
-                    scales: {
-                        y: { beginAtZero: true },
-                    },
-                },
-            });
-            return;
-        }
-        const labels = Object.keys(row.daily_series || {});
-        const values = labels.map((date) => row.daily_series[date]);
-        trendChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    label: `${row.warehouse_code}-${row.sku}`,
-                    data: values,
-                    borderColor: '#006F7A',
-                    backgroundColor: 'rgba(0, 151, 157, 0.2)',
-                    tension: 0.3,
-                    fill: true,
-                }],
-            },
-            options: {
-                scales: {
-                    y: { beginAtZero: true },
-                },
-            },
-        });
-    }
 
-    function setupColumnCheckboxes() {
-        document.querySelectorAll('.column-checkbox').forEach((checkbox) => {
-            checkbox.addEventListener('change', () => {
-                if (!checkbox.checked) {
-                    return;
-                }
-                const field = checkbox.dataset.field;
-                if (!field) {
-                    return;
-                }
-                document.querySelectorAll(`.column-checkbox[data-field="${field}"]`).forEach((other) => {
-                    if (other !== checkbox) {
-                        other.checked = false;
+        function setupNavigation() {
+            if (!sectionTriggers.length) return;
+            sectionTriggers.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const target = button.dataset.sectionTrigger;
+                    if (target) {
+                        setActiveSection(target);
                     }
                 });
             });
-        });
-    }
+            const initiallyActive = document.querySelector('.section-tab[data-section-trigger][aria-selected="true"]');
+            if (initiallyActive) {
+                setActiveSection(initiallyActive.dataset.sectionTrigger);
+            } else if (navButtons[0]) {
+                setActiveSection(navButtons[0].dataset.sectionTrigger);
+            }
+        }
 
-    $(document).ready(function () {
-        const decimalRenderer = $.fn.dataTable.render.number(',', '.', 2);
-        const integerRenderer = $.fn.dataTable.render.number(',', '.', 0);
-        demandTable = $('#demandTable').DataTable({
-            paging: true,
-            searching: false,
-            info: false,
-            order: [[5, 'desc']],
-            columnDefs: [
-                {
-                    targets: [2, 5],
-                    render: function (data) {
-                        if (data === null || data === '') {
-                            return '0';
+        function setupColorScheme() {
+            document.documentElement.classList.add('dark');
+        }
+
+        function dismissAlerts() {
+            document.querySelectorAll('[data-dismiss-alert]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const container = button.closest('[data-alert]');
+                    if (container) {
+                        container.remove();
+                    }
+                });
+            });
+        }
+
+        function normalizeDaysValue(value) {
+            if (value === null || value === undefined) {
+                return null;
+            }
+            if (typeof value === 'string' && value.trim() === '') {
+                return null;
+            }
+            const numericValue = Number(value);
+            if (!Number.isFinite(numericValue)) {
+                return null;
+            }
+            return numericValue;
+        }
+
+        function createDaysBadgeElement(value) {
+            const normalized = normalizeDaysValue(value);
+            const span = document.createElement('span');
+            span.className = 'inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold';
+            if (normalized === null) {
+                span.textContent = '—';
+                span.classList.add('bg-gray-200', 'text-gray-600', 'dark:bg-gray-700', 'dark:text-gray-300');
+                return span;
+            }
+            const rounded = Math.round(normalized);
+            span.textContent = `${rounded}d`;
+            if (rounded <= 0) {
+                span.classList.add('bg-rose-100', 'text-rose-700', 'dark:bg-rose-500/20', 'dark:text-rose-200');
+            } else if (rounded <= 7) {
+                span.classList.add('bg-orange-100', 'text-orange-700', 'dark:bg-orange-500/20', 'dark:text-orange-200');
+            } else {
+                span.classList.add('bg-emerald-100', 'text-emerald-700', 'dark:bg-emerald-500/20', 'dark:text-emerald-200');
+            }
+            return span;
+        }
+
+        function formatInteger(value) {
+            const numericValue = Number(value);
+            if (!Number.isFinite(numericValue)) {
+                return '0';
+            }
+            return integerFormatter.format(Math.round(numericValue));
+        }
+
+        function refreshDashboard() {
+            const warehouseSelect = document.getElementById('warehouseFilter');
+            const skuInput = document.getElementById('skuFilter');
+            if (!warehouseSelect || !skuInput) {
+                return;
+            }
+            const params = new URLSearchParams();
+            if (warehouseSelect.value) params.append('warehouse_id', warehouseSelect.value);
+            if (skuInput.value.trim()) params.append('sku', skuInput.value.trim());
+            const url = 'api.php' + (params.toString() ? `?${params.toString()}` : '');
+
+            fetch(url, { credentials: 'same-origin' })
+                .then((response) => response.json())
+                .then((payload) => {
+                    const rows = payload.data || [];
+                    currentRowsMap = new Map();
+                    const tableBody = document.querySelector('#demandTable tbody');
+                    const emptyState = document.getElementById('demandEmptyState');
+                    if (tableBody) {
+                        tableBody.innerHTML = '';
+                        selectedRowEl = null;
+                    }
+                    if (emptyState) {
+                        emptyState.classList.toggle('hidden', rows.length > 0);
+                    }
+
+                    if (tableBody) {
+                        rows.forEach((row) => {
+                            const key = `${row.warehouse_id}|${row.sku}`;
+                            currentRowsMap.set(key, row);
+                            const tr = document.createElement('tr');
+                            tr.dataset.key = key;
+                            tr.className = 'cursor-pointer bg-white/70 transition hover:bg-primary/10 dark:bg-white/5 dark:hover:bg-primary/20';
+
+                            const warehouseCell = document.createElement('td');
+                            warehouseCell.className = 'px-4 py-3 font-medium text-gray-900 dark:text-gray-100';
+                            warehouseCell.textContent = `${row.warehouse_code} · ${row.warehouse_name}`;
+                            tr.appendChild(warehouseCell);
+
+                            const skuCell = document.createElement('td');
+                            skuCell.className = 'px-4 py-3 text-gray-700 dark:text-gray-200';
+                            skuCell.textContent = row.sku;
+                            tr.appendChild(skuCell);
+
+                            const stockCell = document.createElement('td');
+                            stockCell.className = 'px-4 py-3 text-gray-700 dark:text-gray-200';
+                            stockCell.textContent = formatInteger(row.current_stock);
+                            tr.appendChild(stockCell);
+
+                            const maCell = document.createElement('td');
+                            maCell.className = 'px-4 py-3 text-gray-700 dark:text-gray-200';
+                            maCell.textContent = Number(row.moving_average || 0).toFixed(2);
+                            tr.appendChild(maCell);
+
+                            const coverCell = document.createElement('td');
+                            coverCell.className = 'px-4 py-3';
+                            coverCell.appendChild(createDaysBadgeElement(row.days_of_cover));
+                            tr.appendChild(coverCell);
+
+                            const reorderCell = document.createElement('td');
+                            reorderCell.className = 'px-4 py-3 text-gray-700 dark:text-gray-200';
+                            reorderCell.textContent = formatInteger(row.reorder_qty);
+                            tr.appendChild(reorderCell);
+
+                            tableBody.appendChild(tr);
+                        });
+                    }
+
+                    const summaryItems = document.getElementById('summaryItems');
+                    if (summaryItems) {
+                        summaryItems.textContent = rows.length;
+                    }
+                    const totalReorder = rows.reduce((sum, row) => {
+                        const value = Number(row.reorder_qty);
+                        return Number.isFinite(value) ? sum + value : sum;
+                    }, 0);
+                    const summaryReorder = document.getElementById('summaryReorder');
+                    if (summaryReorder) {
+                        summaryReorder.textContent = formatInteger(totalReorder);
+                    }
+                    const lowCover = rows.filter((row) => {
+                        const normalized = normalizeDaysValue(row.days_of_cover);
+                        return normalized !== null && normalized <= 7;
+                    }).length;
+                    const summaryLowCover = document.getElementById('summaryLowCover');
+                    if (summaryLowCover) {
+                        summaryLowCover.textContent = lowCover;
+                    }
+                    const warehouseSet = new Set(rows.map((row) => row.warehouse_id));
+                    const summaryWarehouses = document.getElementById('summaryWarehouses');
+                    if (summaryWarehouses) {
+                        summaryWarehouses.textContent = warehouseSet.size;
+                    }
+
+                    const reorderContainer = document.getElementById('reorderChart');
+                    const reorderEmpty = document.getElementById('reorderEmptyState');
+                    const topRows = [...rows].sort((a, b) => b.reorder_qty - a.reorder_qty).slice(0, 10);
+                    if (reorderContainer) {
+                        if (reorderChart) {
+                            reorderChart.destroy();
                         }
-                        const numericValue = Number(data);
-                        if (!Number.isFinite(numericValue)) {
-                            return '0';
+                        if (topRows.length === 0) {
+                            if (reorderEmpty) reorderEmpty.classList.remove('hidden');
+                        } else {
+                            if (reorderEmpty) reorderEmpty.classList.add('hidden');
+                            reorderChart = new Chart(reorderContainer.getContext('2d'), {
+                                type: 'bar',
+                                data: {
+                                    labels: topRows.map((row) => `${row.warehouse_code}-${row.sku}`),
+                                    datasets: [{
+                                        label: 'Reorder Qty',
+                                        data: topRows.map((row) => row.reorder_qty),
+                                        backgroundColor: 'rgba(15, 145, 189, 0.75)',
+                                        borderRadius: 8,
+                                    }],
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                    },
+                                    scales: {
+                                        x: { ticks: { color: '#6b7280' } },
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: { color: '#6b7280' },
+                                        },
+                                    },
+                                },
+                            });
                         }
-                        return integerRenderer.display(Math.round(numericValue));
+                    }
+
+                    if (trendChart) {
+                        trendChart.destroy();
+                    }
+                    renderTrendSeries();
+                    const trendEmpty = document.getElementById('trendEmptyState');
+                    if (trendEmpty) {
+                        trendEmpty.classList.remove('hidden');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Failed to load dashboard data', error);
+                });
+        }
+
+        function handleRowClick(event) {
+            const tableBodyEl = document.querySelector('#demandTable tbody');
+            if (!tableBodyEl) return;
+            const rowElement = event.target.closest('tr[data-key]');
+            if (!rowElement) {
+                return;
+            }
+            if (selectedRowEl) {
+                selectedRowEl.classList.remove('ring-2', 'ring-primary/50');
+            }
+            selectedRowEl = rowElement;
+            selectedRowEl.classList.add('ring-2', 'ring-primary/50');
+            const detail = currentRowsMap.get(rowElement.dataset.key);
+            if (detail) {
+                const trendEmpty = document.getElementById('trendEmptyState');
+                if (trendEmpty) {
+                    trendEmpty.classList.add('hidden');
+                }
+                renderTrendSeries(detail);
+            }
+        }
+
+        function renderTrendSeries(row) {
+            const canvas = document.getElementById('trendChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (trendChart) {
+                trendChart.destroy();
+            }
+            if (!row) {
+                trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ data: [], borderColor: '#0f91bd', tension: 0.3 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+                });
+                return;
+            }
+            const labels = Object.keys(row.daily_series || {});
+            const values = labels.map((date) => row.daily_series[date]);
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: `${row.warehouse_code}-${row.sku}`,
+                        data: values,
+                        borderColor: '#0f91bd',
+                        backgroundColor: 'rgba(15, 145, 189, 0.2)',
+                        tension: 0.35,
+                        fill: true,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#6b7280' } },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#6b7280' },
+                        },
                     },
                 },
-                {
-                    targets: 4,
-                    render: function (data, type) {
-                        const normalized = normalizeDaysValue(data);
-                        if (type === 'display') {
-                            return createDaysBadge(data, normalized);
-                        }
-                        if (type === 'filter') {
-                            return normalized === null ? '' : String(Math.round(normalized));
-                        }
-                        return normalized === null ? null : normalized;
-                    },
-                },
-                {
-                    targets: 3,
-                    render: function (data) {
-                        if (data === null || data === '') {
-                            return '0.00';
-                        }
-                        const numericValue = Number(data);
-                        if (!Number.isFinite(numericValue)) {
-                            return '0.00';
-                        }
-                        return decimalRenderer.display(numericValue);
-                    },
-                },
-                {
-                    targets: 6,
-                    visible: false,
-                    searchable: false,
-                },
-            ],
-        });
+            });
+        }
 
-        document.getElementById('warehouseFilter').addEventListener('change', refreshDashboard);
-        document.getElementById('skuFilter').addEventListener('input', function () {
-            clearTimeout(this._timer);
-            this._timer = setTimeout(refreshDashboard, 400);
-        });
+        function setupColumnCheckboxes() {
+            document.querySelectorAll('.column-checkbox').forEach((checkbox) => {
+                checkbox.addEventListener('change', () => {
+                    if (!checkbox.checked) {
+                        return;
+                    }
+                    const field = checkbox.dataset.field;
+                    if (!field) {
+                        return;
+                    }
+                    document.querySelectorAll(`.column-checkbox[data-field="${field}"]`).forEach((other) => {
+                        if (other !== checkbox) {
+                            other.checked = false;
+                        }
+                    });
+                });
+            });
+        }
 
-        refreshDashboard();
-        setupColumnCheckboxes();
-    });
-</script>
+        function setupFilters() {
+            const warehouseSelect = document.getElementById('warehouseFilter');
+            const skuInput = document.getElementById('skuFilter');
+            if (!warehouseSelect || !skuInput) return;
+            warehouseSelect.addEventListener('change', refreshDashboard);
+            let timeout;
+            skuInput.addEventListener('input', () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(refreshDashboard, 350);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupColorScheme();
+            setupNavigation();
+            dismissAlerts();
+            setupColumnCheckboxes();
+            setupFilters();
+            const tableBodyEl = document.querySelector('#demandTable tbody');
+            if (tableBodyEl) {
+                tableBodyEl.addEventListener('click', handleRowClick);
+            }
+            refreshDashboard();
+        });
+    </script>
 </body>
 </html>
