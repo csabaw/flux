@@ -1,68 +1,44 @@
 :root {
-    --arduino-teal: #00979d;
-    --arduino-blue: #006f7a;
+    color-scheme: dark;
 }
 
 body {
-    background-color: #f5f7fa;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    color: #1d3557;
+    font-family: 'Manrope', 'Noto Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.navbar {
-    background: linear-gradient(135deg, var(--arduino-teal), var(--arduino-blue));
+.section-tab {
+    position: relative;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
 }
 
-.nav-pills .nav-link.active {
-    background-color: var(--arduino-teal);
+.section-tab[aria-selected="true"] {
+    color: #ffffff;
 }
 
-.nav-pills .nav-link {
-    color: var(--arduino-blue);
+.section-tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(15, 145, 189, 0) 0%, rgba(15, 145, 189, 0.9) 50%, rgba(15, 145, 189, 0) 100%);
+    box-shadow: 0 0 18px rgba(15, 145, 189, 0.45);
 }
 
-.nav-pills .nav-link:hover {
-    color: var(--arduino-teal);
+[data-alert] {
+    animation: fade-in 0.3s ease;
 }
 
-.card {
-    border: none;
-    border-radius: 0.75rem;
-}
-
-.card-header {
-    background-color: rgba(0, 151, 157, 0.08);
-    border-bottom: none;
-    font-weight: 600;
-}
-
-.btn-primary {
-    background-color: var(--arduino-teal);
-    border-color: var(--arduino-teal);
-}
-
-.btn-primary:hover,
-.btn-primary:focus {
-    background-color: var(--arduino-blue);
-    border-color: var(--arduino-blue);
-}
-
-.table thead th {
-    border-bottom: 2px solid rgba(0, 111, 122, 0.2);
-}
-
-.table-striped tbody tr:nth-of-type(odd) {
-    background-color: rgba(0, 151, 157, 0.04);
-}
-
-.alert {
-    border-radius: 0.75rem;
-}
-
-#demandTable tbody tr {
-    cursor: pointer;
-}
-
-#demandTable tbody tr:hover {
-    background-color: rgba(0, 111, 122, 0.1);
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
