@@ -602,21 +602,23 @@ $tabs = [
                                         <input id="skuFilter" type="text" placeholder="Filter by SKU" class="<?= $inputClass ?> sm:w-48">
                                     </div>
                                 </div>
-                                <div class="mt-6 overflow-x-auto">
-                                    <table id="demandTable" class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
-                                        <thead>
-                                            <tr class="text-xs uppercase tracking-[0.3em] text-gray-500">
-                                                <th class="px-4 py-3 text-left font-semibold">Warehouse</th>
-                                                <th class="px-4 py-3 text-left font-semibold">SKU</th>
-                                                <th class="px-4 py-3 text-left font-semibold">On-hand</th>
-                                                <th class="px-4 py-3 text-left font-semibold">Moving Avg</th>
-                                                <th class="px-4 py-3 text-left font-semibold">Days of Cover</th>
-                                                <th class="px-4 py-3 text-left font-semibold">Reorder Qty</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-white/10"></tbody>
-                                    </table>
-                                    <div id="demandEmptyState" class="hidden py-10 text-center text-sm text-gray-500">No SKUs found for the selected filters.</div>
+                                <div class="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-lg shadow-black/30">
+                                    <div class="overflow-x-auto">
+                                        <table id="demandTable" class="w-full min-w-[960px] table-auto text-sm text-gray-200">
+                                            <thead class="bg-white/[0.03] text-xs font-medium uppercase tracking-[0.3em] text-gray-400">
+                                                <tr>
+                                                    <th class="px-6 py-4 text-left text-gray-300">Warehouse</th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">SKU</th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">On-hand</th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">Moving Avg</th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">Days of Cover</th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">Reorder Qty</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-white/5 bg-white/[0.01]"></tbody>
+                                        </table>
+                                    </div>
+                                    <div id="demandEmptyState" class="hidden border-t border-white/5 bg-transparent py-10 text-center text-sm text-gray-500">No SKUs found for the selected filters.</div>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-6">
@@ -1240,35 +1242,35 @@ $tabs = [
                             currentRowsMap.set(key, row);
                             const tr = document.createElement('tr');
                             tr.dataset.key = key;
-                            tr.className = 'cursor-pointer bg-[#1c1f25] transition hover:bg-primary/20 hover:bg-opacity-30';
+                            tr.className = 'group cursor-pointer transition-colors odd:bg-white/[0.01] even:bg-white/[0.02] hover:bg-primary/20 hover:bg-opacity-40';
 
                             const warehouseCell = document.createElement('td');
-                            warehouseCell.className = 'px-4 py-3 font-medium text-gray-900 dark:text-gray-100';
+                            warehouseCell.className = 'px-6 py-4 font-semibold text-white';
                             warehouseCell.textContent = `${row.warehouse_code} · ${row.warehouse_name}`;
                             tr.appendChild(warehouseCell);
 
                             const skuCell = document.createElement('td');
-                            skuCell.className = 'px-4 py-3 text-gray-700 dark:text-gray-200';
+                            skuCell.className = 'px-6 py-4 text-gray-300';
                             skuCell.textContent = row.sku;
                             tr.appendChild(skuCell);
 
                             const stockCell = document.createElement('td');
-                            stockCell.className = 'px-4 py-3 text-gray-700 dark:text-gray-200';
+                            stockCell.className = 'px-6 py-4 text-gray-300';
                             stockCell.textContent = formatInteger(row.current_stock);
                             tr.appendChild(stockCell);
 
                             const maCell = document.createElement('td');
-                            maCell.className = 'px-4 py-3 text-gray-700 dark:text-gray-200';
+                            maCell.className = 'px-6 py-4 text-gray-300';
                             maCell.textContent = Number(row.moving_average || 0).toFixed(2);
                             tr.appendChild(maCell);
 
                             const coverCell = document.createElement('td');
-                            coverCell.className = 'px-4 py-3';
+                            coverCell.className = 'px-6 py-4';
                             coverCell.appendChild(createDaysBadgeElement(row.days_of_cover));
                             tr.appendChild(coverCell);
 
                             const reorderCell = document.createElement('td');
-                            reorderCell.className = 'px-4 py-3 text-gray-700 dark:text-gray-200';
+                            reorderCell.className = 'px-6 py-4 text-gray-300';
                             reorderCell.textContent = formatInteger(row.reorder_qty);
                             tr.appendChild(reorderCell);
 
