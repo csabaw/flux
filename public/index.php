@@ -410,7 +410,9 @@ $tabs = [
 
 ?>
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+
+<html lang="en" class="dark h-full">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1136,18 +1138,9 @@ $tabs = [
         }
 
         function setupColorScheme() {
-            const root = document.documentElement;
-            const media = window.matchMedia('(prefers-color-scheme: dark)');
-            const applyScheme = (event) => {
-                const isDark = event.matches !== undefined ? event.matches : media.matches;
-                root.classList.toggle('dark', isDark);
-            };
-            applyScheme(media);
-            if (typeof media.addEventListener === 'function') {
-                media.addEventListener('change', applyScheme);
-            } else if (typeof media.addListener === 'function') {
-                media.addListener(applyScheme);
-            }
+
+            document.documentElement.classList.add('dark');
+
         }
 
         function dismissAlerts() {
