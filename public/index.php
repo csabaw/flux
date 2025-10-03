@@ -333,25 +333,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 break;
             case 'add_warehouse':
-                $code = strtoupper(trim($_POST['warehouse_code'] ?? ''));
                 $name = trim($_POST['warehouse_name'] ?? '');
-                if ($code === '') {
-                    $errors[] = 'Warehouse code is required.';
+                if ($name === '') {
+                    $errors[] = 'Warehouse name is required.';
                     break;
                 }
-                $codeLength = function_exists('mb_strlen') ? mb_strlen($code) : strlen($code);
-                if ($codeLength > 50) {
-                    $errors[] = 'Warehouse code must be 50 characters or fewer.';
+                $nameLength = function_exists('mb_strlen') ? mb_strlen($name) : strlen($name);
+                if ($nameLength > 120) {
+                    $errors[] = 'Warehouse name must be 120 characters or fewer.';
                     break;
                 }
-                if ($name !== '') {
-                    $nameLength = function_exists('mb_strlen') ? mb_strlen($name) : strlen($name);
-                    if ($nameLength > 120) {
-                        $errors[] = 'Warehouse name must be 120 characters or fewer.';
-                        break;
-                    }
-                }
-                $result = upsertWarehouse($mysqli, $code, $name ?: null);
+                $result = upsertWarehouse($mysqli, $name);
                 if ($result['id'] <= 0) {
                     $errors[] = 'Unable to save warehouse. Please try again.';
                     break;
@@ -595,7 +587,7 @@ $tabs = [
                                         <select id="warehouseFilter" name="warehouse_id" class="<?= $inputClass ?> sm:w-56">
                                             <option value="">All Warehouses</option>
                                             <?php foreach ($warehouses as $warehouse): ?>
-                                                <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
+                                                <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                         <label class="sr-only" for="skuFilter">SKU filter</label>
@@ -664,7 +656,7 @@ $tabs = [
                                             $salesWarehouseId = (int) ($salesPreview['warehouse_id'] ?? 0);
                                             $salesWarehouseInfo = $warehouses[$salesWarehouseId] ?? null;
                                             $salesWarehouseLabel = $salesWarehouseInfo
-                                                ? ($salesWarehouseInfo['code'] . ' · ' . $salesWarehouseInfo['name'])
+                                                ? $salesWarehouseInfo['name']
                                                 : ('ID ' . $salesWarehouseId);
                                             $salesColumnMap = is_array($salesPreview['column_map'] ?? null) ? $salesPreview['column_map'] : [];
                                             $salesFields = ['sale_date' => 'Sale Date', 'sku' => 'SKU', 'quantity' => 'Quantity'];
@@ -761,7 +753,7 @@ $tabs = [
                                                 <select class="<?= $inputClass ?>" id="salesWarehouse" name="warehouse_id" required>
                                                     <option value="">Select warehouse</option>
                                                     <?php foreach ($warehouses as $warehouse): ?>
-                                                        <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
+                                                        <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
@@ -796,7 +788,7 @@ $tabs = [
                                             $stockWarehouseId = (int) ($stockPreview['warehouse_id'] ?? 0);
                                             $stockWarehouseInfo = $warehouses[$stockWarehouseId] ?? null;
                                             $stockWarehouseLabel = $stockWarehouseInfo
-                                                ? ($stockWarehouseInfo['code'] . ' · ' . $stockWarehouseInfo['name'])
+                                                ? $stockWarehouseInfo['name']
                                                 : ('ID ' . $stockWarehouseId);
                                             $stockColumnMap = is_array($stockPreview['column_map'] ?? null) ? $stockPreview['column_map'] : [];
                                             $stockFields = ['sku' => 'SKU', 'quantity' => 'Quantity'];
@@ -898,7 +890,7 @@ $tabs = [
                                                 <select class="<?= $inputClass ?>" id="stockWarehouse" name="warehouse_id" required>
                                                     <option value="">Select warehouse</option>
                                                     <?php foreach ($warehouses as $warehouse): ?>
-                                                        <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
+                                                        <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
@@ -923,16 +915,12 @@ $tabs = [
                         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
                             <div class="<?= $cardClass ?>">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Add or Update Warehouse</h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Create new warehouses or update existing codes and names.</p>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Create new warehouses or update existing names.</p>
                                 <form method="post" class="mt-6 space-y-4">
                                     <input type="hidden" name="action" value="add_warehouse">
                                     <div>
-                                        <label class="<?= $labelClass ?>" for="warehouseCode">Warehouse Code</label>
-                                        <input class="<?= $inputClass ?>" type="text" id="warehouseCode" name="warehouse_code" maxlength="50" required>
-                                    </div>
-                                    <div>
                                         <label class="<?= $labelClass ?>" for="warehouseName">Warehouse Name</label>
-                                        <input class="<?= $inputClass ?>" type="text" id="warehouseName" name="warehouse_name" maxlength="120" placeholder="Optional name">
+                                        <input class="<?= $inputClass ?>" type="text" id="warehouseName" name="warehouse_name" maxlength="120" required>
                                     </div>
                                     <button class="<?= $buttonPrimaryClass ?>" type="submit">Save Warehouse</button>
                                 </form>
@@ -943,7 +931,6 @@ $tabs = [
                                     <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
                                         <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
                                             <tr>
-                                                <th class="px-4 py-3 text-left">Code</th>
                                                 <th class="px-4 py-3 text-left">Name</th>
                                                 <th class="px-4 py-3 text-left">Created</th>
                                             </tr>
@@ -960,14 +947,13 @@ $tabs = [
                                                 }
                                             ?>
                                             <tr class="bg-[#1c1f25] text-sm text-gray-200">
-                                                <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
-                                                <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
+                                                <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
                                                 <td class="px-4 py-2 text-gray-500"><?= htmlspecialchars($createdLabel, ENT_QUOTES) ?></td>
                                             </tr>
                                             <?php endforeach; ?>
                                             <?php if (empty($warehouses)): ?>
                                             <tr>
-                                                <td class="px-4 py-6 text-center text-gray-500" colspan="3">No warehouses yet.</td>
+                                                <td class="px-4 py-6 text-center text-gray-500" colspan="2">No warehouses yet.</td>
                                             </tr>
                                             <?php endif; ?>
                                         </tbody>
@@ -989,7 +975,7 @@ $tabs = [
                                         <select class="<?= $inputClass ?>" id="paramWarehouse" name="warehouse_id" required>
                                             <option value="">Select warehouse</option>
                                             <?php foreach ($warehouses as $warehouse): ?>
-                                                <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></option>
+                                                <option value="<?= (int) $warehouse['id'] ?>"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
@@ -1036,7 +1022,7 @@ $tabs = [
                                                     $params = $warehouseParams[$warehouse['id']] ?? $defaults;
                                                 ?>
                                                 <tr class="bg-[#1c1f25] text-sm text-gray-200">
-                                                    <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['code'] . ' · ' . $warehouse['name'], ENT_QUOTES) ?></td>
+                                                    <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
                                                     <td class="px-4 py-2 text-gray-300"><?= (int) $params['days_to_cover'] ?></td>
                                                     <td class="px-4 py-2 text-gray-300"><?= (int) $params['ma_window_days'] ?></td>
                                                     <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars(number_format((float) $params['min_avg_daily'], 2), ENT_QUOTES) ?></td>
@@ -1075,7 +1061,7 @@ $tabs = [
                                                         }
                                                         foreach ($items as $skuCode => $params): ?>
                                                             <tr class="bg-[#1c1f25] text-sm text-gray-200">
-                                                                <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['code'], ENT_QUOTES) ?></td>
+                                                                <td class="px-4 py-2 font-medium text-white"><?= htmlspecialchars($warehouse['name'], ENT_QUOTES) ?></td>
                                                                 <td class="px-4 py-2 text-gray-300"><?= htmlspecialchars($skuCode, ENT_QUOTES) ?></td>
                                                                 <td class="px-4 py-2 text-gray-300"><?= (int) $params['days_to_cover'] ?></td>
                                                                 <td class="px-4 py-2 text-gray-300"><?= (int) $params['ma_window_days'] ?></td>
@@ -1246,7 +1232,7 @@ $tabs = [
 
                             const warehouseCell = document.createElement('td');
                             warehouseCell.className = 'px-6 py-4 font-semibold text-white';
-                            warehouseCell.textContent = `${row.warehouse_code} · ${row.warehouse_name}`;
+                            warehouseCell.textContent = row.warehouse_name || '';
                             tr.appendChild(warehouseCell);
 
                             const skuCell = document.createElement('td');
@@ -1318,7 +1304,7 @@ $tabs = [
                             reorderChart = new Chart(reorderContainer.getContext('2d'), {
                                 type: 'bar',
                                 data: {
-                                    labels: topRows.map((row) => `${row.warehouse_code}-${row.sku}`),
+                                    labels: topRows.map((row) => `${row.warehouse_name || 'Warehouse'}-${row.sku}`),
                                     datasets: [{
                                         label: 'Reorder Qty',
                                         data: topRows.map((row) => row.reorder_qty),
@@ -1402,7 +1388,7 @@ $tabs = [
                 data: {
                     labels,
                     datasets: [{
-                        label: `${row.warehouse_code}-${row.sku}`,
+                        label: `${row.warehouse_name || 'Warehouse'}-${row.sku}`,
                         data: values,
                         borderColor: '#0f91bd',
                         backgroundColor: 'rgba(15, 145, 189, 0.2)',
