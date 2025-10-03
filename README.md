@@ -59,7 +59,7 @@ Columns (header row required):
 
 | Column          | Description                          |
 |-----------------|--------------------------------------|
-| `warehouse_code`| Warehouse identifier (auto-created). |
+| `warehouse_name`| Warehouse name (auto-created).        |
 | `sku`           | SKU identifier.                      |
 | `sale_date`     | Date (YYYY-MM-DD).                   |
 | `quantity`      | Units sold for the day.              |
@@ -70,7 +70,7 @@ Columns (header row required):
 
 | Column           | Description                              |
 |------------------|------------------------------------------|
-| `warehouse_code` | Warehouse identifier (auto-created).     |
+| `warehouse_name` | Warehouse name (auto-created).            |
 | `sku`            | SKU identifier.                          |
 | `snapshot_date`  | Date of the inventory snapshot.          |
 | `quantity`       | On-hand quantity at the snapshot date.   |
@@ -99,7 +99,6 @@ Response structure:
   "data": [
     {
       "warehouse_id": 1,
-      "warehouse_code": "ROMA",
       "warehouse_name": "Rome",
       "sku": "SKU123",
       "current_stock": 120,
