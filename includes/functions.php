@@ -520,14 +520,33 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
     $salesMap = getSalesMap($mysqli, $config['lookback_days'], $warehouseId, $sku);
 
     $comboKeys = [];
+    $registerCombo = static function (int $wId, string $skuCode) use (&$comboKeys, $warehouseId, $sku): void {
+        if ($wId <= 0 || $skuCode === '') {
+            return;
+        }
+        if ($warehouseId !== null && $warehouseId > 0 && $wId !== $warehouseId) {
+            return;
+        }
+        if ($sku !== null && $sku !== '' && $skuCode !== $sku) {
+            return;
+        }
+
+        $comboKeys[$wId . '|' . $skuCode] = ['warehouse_id' => $wId, 'sku' => $skuCode];
+    };
+
     foreach ($stockMap as $wId => $items) {
         foreach ($items as $skuCode => $_) {
-            $comboKeys[$wId . '|' . $skuCode] = ['warehouse_id' => $wId, 'sku' => $skuCode];
+            $registerCombo((int) $wId, (string) $skuCode);
         }
     }
     foreach ($salesMap as $wId => $items) {
         foreach ($items as $skuCode => $_) {
-            $comboKeys[$wId . '|' . $skuCode] = ['warehouse_id' => $wId, 'sku' => $skuCode];
+            $registerCombo((int) $wId, (string) $skuCode);
+        }
+    }
+    foreach ($skuParams as $wId => $items) {
+        foreach ($items as $skuCode => $_) {
+            $registerCombo((int) $wId, (string) $skuCode);
         }
     }
 
