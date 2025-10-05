@@ -1342,6 +1342,7 @@ $tabs = [
             const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
             dashboardRequestController = controller;
             const signal = controller ? controller.signal : null;
+            const requestId = ++dashboardRequestId;
 
             setDashboardLoading(true);
 
