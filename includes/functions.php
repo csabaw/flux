@@ -171,6 +171,8 @@ function getLatestStock(mysqli $mysqli, ?int $warehouseId = null, ?string $sku =
         . $where
         . ' ORDER BY warehouse_id, sku, snapshot_date DESC, id DESC';
 
+    logSqlQuery($sql, 'getLatestStock');
+
     $stock = [];
     if ($result = $mysqli->query($sql)) {
         while ($row = $result->fetch_assoc()) {
@@ -212,6 +214,15 @@ function getSalesMap(mysqli $mysqli, int $lookbackDays, ?int $warehouseId = null
     }
 
     $sql .= ' GROUP BY warehouse_id, sku, sale_date';
+
+    $logSql = $sql;
+    if ($params !== []) {
+        $encodedParams = json_encode($params);
+        if (is_string($encodedParams)) {
+            $logSql .= ' /* params: ' . $encodedParams . ' */';
+        }
+    }
+    logSqlQuery($logSql, 'getSalesMap');
 
     $stmt = $mysqli->prepare($sql);
     if (!$stmt) {
