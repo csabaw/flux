@@ -539,8 +539,16 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
         $wId = $combo['warehouse_id'];
         $skuCode = $combo['sku'];
         $warehouse = $warehouses[$wId] ?? null;
-        if (!$warehouse) {
-            continue;
+        $warehouseName = '';
+        $warehouseCode = '';
+        if ($warehouse) {
+            $warehouseName = (string) ($warehouse['name'] ?? '');
+            $warehouseCode = (string) ($warehouse['code'] ?? '');
+        }
+
+        $warehouseName = trim($warehouseName);
+        if ($warehouseName === '') {
+            $warehouseName = 'Warehouse #' . $wId;
         }
 
         $params = resolveParameters($wId, $skuCode, $config['defaults'], $warehouseParams, $skuParams);
@@ -582,7 +590,8 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
 
         $data[] = [
             'warehouse_id' => $wId,
-            'warehouse_name' => $warehouse['name'],
+            'warehouse_name' => $warehouseName,
+            'warehouse_code' => $warehouseCode,
             'sku' => $skuCode,
             'current_stock' => $roundedStock,
             'snapshot_date' => $snapshotDate,
