@@ -601,6 +601,7 @@ $tabs = [
                                             <span>Loading latest demand data&hellip;</span>
                                         </div>
                                     </div>
+                                    <div id="demandErrorState" class="hidden border-y border-rose-500/30 bg-rose-500/10 px-6 py-4 text-sm text-rose-100" role="alert"></div>
                                     <div id="demandTableScroll" class="overflow-x-auto">
                                         <table id="demandTable" class="w-full min-w-[960px] table-auto text-sm text-gray-200">
                                             <thead class="bg-white/[0.03] text-xs font-medium uppercase tracking-[0.3em] text-gray-400">
@@ -1144,6 +1145,7 @@ $tabs = [
         let currentSort = { column: null, direction: 'asc' };
         let selectedRowEl = null;
         let selectedRowKey = null;
+        let dashboardRequestController = null;
         const SORT_CONFIG = {
             warehouse: {
                 type: 'string',
@@ -1299,6 +1301,24 @@ $tabs = [
             }
         }
 
+        function showDemandError(message) {
+            const errorEl = document.getElementById('demandErrorState');
+            if (!errorEl) {
+                return;
+            }
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+
+        function clearDemandError() {
+            const errorEl = document.getElementById('demandErrorState');
+            if (!errorEl) {
+                return;
+            }
+            errorEl.textContent = '';
+            errorEl.classList.add('hidden');
+        }
+
         function refreshDashboard() {
             const warehouseSelect = document.getElementById('warehouseFilter');
             const skuInput = document.getElementById('skuFilter');
@@ -1312,10 +1332,37 @@ $tabs = [
             if (skuInput.value.trim()) params.append('sku', skuInput.value.trim());
             const url = 'api.php' + (params.toString() ? `?${params.toString()}` : '');
 
+            clearDemandError();
+
+            if (dashboardRequestController && typeof dashboardRequestController.abort === 'function') {
+                dashboardRequestController.abort();
+            }
+            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            dashboardRequestController = controller;
+            const signal = controller ? controller.signal : null;
+
             setDashboardLoading(true);
 
-            fetch(url, { credentials: 'same-origin' })
-                .then((response) => response.json())
+            const fetchOptions = { credentials: 'same-origin' };
+            if (signal) {
+                fetchOptions.signal = signal;
+            }
+
+            fetch(url, fetchOptions)
+                .then((response) => {
+                    if (!response.ok) {
+                        const error = new Error(`Request failed with status ${response.status}`);
+                        error.name = 'HttpError';
+                        error.status = response.status;
+                        throw error;
+                    }
+                    return response
+                        .json()
+                        .catch((jsonError) => {
+                            jsonError.name = 'JsonParseError';
+                            throw jsonError;
+                        });
+                })
                 .then((payload) => {
                     const rowsSource = payload.data || [];
                     const rows = Array.isArray(rowsSource) ? rowsSource : Object.values(rowsSource);
@@ -1450,10 +1497,69 @@ $tabs = [
                     }
                 })
                 .catch((error) => {
+                    if (error.name === 'AbortError' || (signal && signal.aborted)) {
+                        return;
+                    }
+                    currentRows = [];
+                    currentRowsMap = new Map();
+                    selectedRowKey = null;
+                    selectedRowEl = null;
+                    tableBody.innerHTML = '';
+                    if (emptyState) {
+                        emptyState.classList.remove('hidden');
+                    }
+                    const summaryItems = document.getElementById('summaryItems');
+                    if (summaryItems) {
+                        summaryItems.textContent = '0';
+                    }
+                    const summaryReorder = document.getElementById('summaryReorder');
+                    if (summaryReorder) {
+                        summaryReorder.textContent = '0';
+                    }
+                    const summaryLowCover = document.getElementById('summaryLowCover');
+                    if (summaryLowCover) {
+                        summaryLowCover.textContent = '0';
+                    }
+                    const summaryWarehouses = document.getElementById('summaryWarehouses');
+                    if (summaryWarehouses) {
+                        summaryWarehouses.textContent = '0';
+                    }
+                    if (reorderChart) {
+                        reorderChart.destroy();
+                        reorderChart = null;
+                    }
+                    const reorderEmpty = document.getElementById('reorderEmptyState');
+                    if (reorderEmpty) {
+                        reorderEmpty.classList.remove('hidden');
+                    }
+                    if (trendChart) {
+                        trendChart.destroy();
+                        trendChart = null;
+                    }
+                    const trendEmpty = document.getElementById('trendEmptyState');
+                    if (trendEmpty) {
+                        trendEmpty.classList.remove('hidden');
+                    }
+                    renderTrendSeries();
+                    let errorMessage = 'Unable to load demand data. Please try again.';
+                    if (error.name === 'HttpError' && typeof error.status === 'number') {
+                        errorMessage = `Unable to load demand data (status ${error.status}). Please try again.`;
+                    } else if (error.name === 'JsonParseError') {
+                        errorMessage = 'Unable to load demand data because the server response was invalid. Please try again.';
+                    }
+                    showDemandError(errorMessage);
                     console.error('Failed to load dashboard data', error);
                 })
                 .finally(() => {
-                    setDashboardLoading(false);
+                    if (!controller) {
+                        dashboardRequestController = null;
+                        setDashboardLoading(false);
+                    } else if (dashboardRequestController === controller) {
+                        dashboardRequestController = null;
+                        setDashboardLoading(false);
+                    } else if (!dashboardRequestController) {
+                        setDashboardLoading(false);
+                    }
                 });
         }
 
