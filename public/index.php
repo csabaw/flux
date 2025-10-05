@@ -1143,6 +1143,8 @@ $tabs = [
         let currentRows = [];
         let currentRowsMap = new Map();
         let currentSort = { column: null, direction: 'asc' };
+        let dashboardAbortController = null;
+        let dashboardRequestId = 0;
         let selectedRowEl = null;
         let selectedRowKey = null;
         let dashboardRequestController = null;
@@ -1364,6 +1366,9 @@ $tabs = [
                         });
                 })
                 .then((payload) => {
+                    if (payload === null || requestId !== dashboardRequestId) {
+                        return;
+                    }
                     const rowsSource = payload.data || [];
                     const rows = Array.isArray(rowsSource) ? rowsSource : Object.values(rowsSource);
                     currentRows = rows.slice();
