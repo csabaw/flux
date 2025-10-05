@@ -1309,6 +1309,7 @@ $tabs = [
                 return;
             }
             errorEl.textContent = message;
+            errorEl.setAttribute('aria-live', 'polite');
             errorEl.classList.remove('hidden');
         }
 
@@ -1318,6 +1319,7 @@ $tabs = [
                 return;
             }
             errorEl.textContent = '';
+            errorEl.removeAttribute('aria-live');
             errorEl.classList.add('hidden');
         }
 
@@ -1333,8 +1335,6 @@ $tabs = [
             if (warehouseSelect.value) params.append('warehouse_id', warehouseSelect.value);
             if (skuInput.value.trim()) params.append('sku', skuInput.value.trim());
             const url = 'api.php' + (params.toString() ? `?${params.toString()}` : '');
-
-            clearDemandError();
 
             if (dashboardRequestController && typeof dashboardRequestController.abort === 'function') {
                 dashboardRequestController.abort();
@@ -1377,6 +1377,7 @@ $tabs = [
                         const key = `${row.warehouse_id}|${row.sku}`;
                         currentRowsMap.set(key, row);
                     });
+                    clearDemandError();
                     if (selectedRowKey && !currentRowsMap.has(selectedRowKey)) {
                         selectedRowKey = null;
                         selectedRowEl = null;
@@ -1551,6 +1552,8 @@ $tabs = [
                         errorMessage = `Unable to load demand data (status ${error.status}). Please try again.`;
                     } else if (error.name === 'JsonParseError') {
                         errorMessage = 'Unable to load demand data because the server response was invalid. Please try again.';
+                    } else if (error.name === 'TypeError') {
+                        errorMessage = 'Unable to load demand data because the request failed. Please check your connection and try again.';
                     }
                     showDemandError(errorMessage);
                     console.error('Failed to load dashboard data', error);
