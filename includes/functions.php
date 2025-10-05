@@ -61,7 +61,14 @@ function logSqlQuery(string $sql, string $context = 'query'): void
 {
     $logDir = dirname(__DIR__) . '/log';
     if (!is_dir($logDir)) {
+        error_clear_last();
         if (!mkdir($logDir, 0775, true) && !is_dir($logDir)) {
+            $lastError = error_get_last();
+            $reason = $lastError['message'] ?? 'unknown reason';
+            $message = sprintf('Unable to create SQL log directory "%s" for context "%s": %s', $logDir, $context, $reason);
+            error_log($message);
+            // Fallback to standard error log so the query is still observable.
+            error_log(sprintf('[sql-fallback] %s: %s', $context, $sql));
             return;
         }
     }
@@ -69,7 +76,15 @@ function logSqlQuery(string $sql, string $context = 'query'): void
     $timestamp = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
     $entry = sprintf('[%s] %s: %s%s', $timestamp, $context, $sql, PHP_EOL);
     $logFile = $logDir . '/sql.log';
-    @file_put_contents($logFile, $entry, FILE_APPEND);
+    error_clear_last();
+    if (file_put_contents($logFile, $entry, FILE_APPEND) === false) {
+        $lastError = error_get_last();
+        $reason = $lastError['message'] ?? 'unknown reason';
+        $message = sprintf('Unable to write SQL log to "%s" for context "%s": %s', $logFile, $context, $reason);
+        error_log($message);
+        // Fallback to standard error log so the query is still observable.
+        error_log(sprintf('[sql-fallback] %s: %s', $context, $sql));
+    }
 }
 
 /**
