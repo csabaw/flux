@@ -263,6 +263,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $header = $preview['header'] ?? [];
                 $headerCount = is_array($header) ? count($header) : 0;
+                $optionalStockFields = ['product_name' => 'product name'];
+                foreach ($optionalStockFields as $key => $label) {
+                    if (!isset($columnInput[$key]) || $columnInput[$key] === '') {
+                        continue;
+                    }
+                    $idx = (int) $columnInput[$key];
+                    if ($idx < 0 || $idx >= $headerCount) {
+                        $errors[] = 'The selected column for the ' . $label . ' is invalid.';
+                        continue;
+                    }
+                    $columnMap[$key] = $idx;
+                }
                 foreach ($columnMap as $idx) {
                     if ($idx < 0 || $idx >= $headerCount) {
                         $errors[] = 'One or more selected columns are invalid.';
@@ -619,6 +631,12 @@ $tabs = [
                                                         </button>
                                                     </th>
                                                     <th class="px-6 py-4 text-left text-gray-300">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="productName">
+                                                            <span>Product</span>
+                                                            <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
+                                                        </button>
+                                                    </th>
+                                                    <th class="px-6 py-4 text-left text-gray-300">
                                                         <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="onHand">
                                                             <span>On-hand</span>
                                                             <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
@@ -809,7 +827,7 @@ $tabs = [
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <h3 class="text-lg font-semibold text-white">Upload Stock Snapshot CSV</h3>
-                                        <p class="text-sm text-gray-400">Provide the latest stock position and map SKU and quantity columns.</p>
+                                        <p class="text-sm text-gray-400">Provide the latest stock position and map SKU, product name, and quantity columns.</p>
                                     </div>
                                     <?php if ($stockPreview): ?>
                                     <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Preview ready</span>
@@ -828,7 +846,11 @@ $tabs = [
                                                 ? $stockWarehouseInfo['name']
                                                 : ('ID ' . $stockWarehouseId);
                                             $stockColumnMap = is_array($stockPreview['column_map'] ?? null) ? $stockPreview['column_map'] : [];
-                                            $stockFields = ['sku' => 'SKU', 'quantity' => 'Quantity'];
+                                            $stockFields = [
+                                                'sku' => 'SKU',
+                                                'product_name' => 'Product Name (optional)',
+                                                'quantity' => 'Quantity',
+                                            ];
                                             $stockSnapshotDate = (string) ($stockPreview['snapshot_date'] ?? '');
                                         ?>
                                         <div class="grid gap-4 sm:grid-cols-2">
@@ -938,7 +960,7 @@ $tabs = [
                                             <div>
                                                 <label class="<?= $labelClass ?>" for="stockCsv">Stock CSV</label>
                                                 <input class="<?= $inputClass ?>" type="file" id="stockCsv" name="stock_csv" accept=".csv" required>
-                                                <p class="<?= $helperClass ?>">Include SKU and quantity columns representing the stock snapshot.</p>
+                                                <p class="<?= $helperClass ?>">Include SKU, product name (optional), and quantity columns representing the stock snapshot.</p>
                                             </div>
                                             <button class="<?= $buttonPrimaryClass ?>" type="submit">Preview Stock File</button>
                                         </form>
@@ -1156,6 +1178,10 @@ $tabs = [
             sku: {
                 type: 'string',
                 getValue: (row) => (row.sku ?? '').toString().toLowerCase(),
+            },
+            productName: {
+                type: 'string',
+                getValue: (row) => (row.product_name ?? '').toString().toLowerCase(),
             },
             onHand: {
                 type: 'number',
@@ -1439,6 +1465,11 @@ $tabs = [
                             skuCell.textContent = row.sku;
                             tr.appendChild(skuCell);
 
+                            const productCell = document.createElement('td');
+                            productCell.className = 'px-6 py-4 text-gray-300';
+                            productCell.textContent = row.product_name || '';
+                            tr.appendChild(productCell);
+
                             const stockCell = document.createElement('td');
                             stockCell.className = 'px-6 py-4 text-gray-300';
                             stockCell.textContent = formatInteger(row.current_stock);
@@ -1502,7 +1533,10 @@ $tabs = [
                             reorderChart = new Chart(reorderContainer.getContext('2d'), {
                                 type: 'bar',
                                 data: {
-                                    labels: topRows.map((row) => `${row.warehouse_name || 'Warehouse'}-${row.sku}`),
+                                    labels: topRows.map((row) => {
+                                        const productLabel = row.product_name && row.product_name !== '' ? row.product_name : row.sku;
+                                        return `${row.warehouse_name || 'Warehouse'}-${productLabel}`;
+                                    }),
                                     datasets: [{
                                         label: 'Reorder Qty',
                                         data: topRows.map((row) => row.reorder_qty),
@@ -1676,6 +1710,11 @@ $tabs = [
                 skuCell.textContent = row.sku ?? '';
                 tr.appendChild(skuCell);
 
+                const productCell = document.createElement('td');
+                productCell.className = 'px-6 py-4 text-gray-300';
+                productCell.textContent = row.product_name ?? '';
+                tr.appendChild(productCell);
+
                 const stockCell = document.createElement('td');
                 stockCell.className = 'px-6 py-4 text-gray-300';
                 stockCell.textContent = formatInteger(row.current_stock);
@@ -1791,7 +1830,7 @@ $tabs = [
                 data: {
                     labels,
                     datasets: [{
-                        label: `${row.warehouse_name || 'Warehouse'}-${row.sku}`,
+                        label: `${row.warehouse_name || 'Warehouse'}-${row.product_name && row.product_name !== '' ? row.product_name : row.sku}`,
                         data: values,
                         borderColor: '#0f91bd',
                         backgroundColor: 'rgba(15, 145, 189, 0.2)',
