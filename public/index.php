@@ -1142,6 +1142,8 @@ $tabs = [
         let currentRows = [];
         let currentRowsMap = new Map();
         let currentSort = { column: null, direction: 'asc' };
+        let dashboardAbortController = null;
+        let dashboardRequestId = 0;
         let selectedRowEl = null;
         let selectedRowKey = null;
         const SORT_CONFIG = {
@@ -1312,11 +1314,25 @@ $tabs = [
             if (skuInput.value.trim()) params.append('sku', skuInput.value.trim());
             const url = 'api.php' + (params.toString() ? `?${params.toString()}` : '');
 
+            if (dashboardAbortController) {
+                dashboardAbortController.abort();
+            }
+            const requestId = ++dashboardRequestId;
+            dashboardAbortController = new AbortController();
+
             setDashboardLoading(true);
 
-            fetch(url, { credentials: 'same-origin' })
-                .then((response) => response.json())
+            fetch(url, { credentials: 'same-origin', signal: dashboardAbortController.signal })
+                .then((response) => {
+                    if (requestId !== dashboardRequestId) {
+                        return null;
+                    }
+                    return response.json();
+                })
                 .then((payload) => {
+                    if (payload === null || requestId !== dashboardRequestId) {
+                        return;
+                    }
                     const rowsSource = payload.data || [];
                     const rows = Array.isArray(rowsSource) ? rowsSource : Object.values(rowsSource);
                     currentRows = rows.slice();
@@ -1450,10 +1466,16 @@ $tabs = [
                     }
                 })
                 .catch((error) => {
+                    if (error.name === 'AbortError') {
+                        return;
+                    }
                     console.error('Failed to load dashboard data', error);
                 })
                 .finally(() => {
-                    setDashboardLoading(false);
+                    if (requestId === dashboardRequestId) {
+                        setDashboardLoading(false);
+                        dashboardAbortController = null;
+                    }
                 });
         }
 
