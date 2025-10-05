@@ -676,8 +676,8 @@ $tabs = [
                             <div class="<?= $cardClass ?>">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Daily Sales CSV</h3>
-                                        <p class="text-sm text-gray-600 dark:text-gray-200">Upload a file and map the sale date, SKU, and quantity columns.</p>
+                                        <h3 class="text-lg font-semibold text-white">Upload Daily Sales CSV</h3>
+                                        <p class="text-sm text-gray-400">Upload a file and map the sale date, SKU, and quantity columns.</p>
                                     </div>
                                     <?php if ($salesPreview): ?>
                                     <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Preview ready</span>
@@ -808,8 +808,8 @@ $tabs = [
                             <div class="<?= $cardClass ?>">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Stock Snapshot CSV</h3>
-                                        <p class="text-sm text-gray-600 dark:text-gray-200">Provide the latest stock position and map SKU and quantity columns.</p>
+                                        <h3 class="text-lg font-semibold text-white">Upload Stock Snapshot CSV</h3>
+                                        <p class="text-sm text-gray-400">Provide the latest stock position and map SKU and quantity columns.</p>
                                     </div>
                                     <?php if ($stockPreview): ?>
                                     <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Preview ready</span>
@@ -951,8 +951,8 @@ $tabs = [
                     <section data-section="warehouses" class="space-y-6<?= $activeSection === 'warehouses' ? '' : ' hidden' ?>">
                         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
                             <div class="<?= $cardClass ?>">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Add or Update Warehouse</h3>
-                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-200">Create new warehouses or update existing names.</p>
+                                <h3 class="text-lg font-semibold text-white">Add or Update Warehouse</h3>
+                                <p class="mt-1 text-sm text-gray-400">Create new warehouses or update existing names.</p>
                                 <form method="post" class="mt-6 space-y-4">
                                     <input type="hidden" name="action" value="add_warehouse">
                                     <div>
@@ -963,7 +963,7 @@ $tabs = [
                                 </form>
                             </div>
                             <div class="<?= $cardClass ?>">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Existing Warehouses</h3>
+                                <h3 class="text-lg font-semibold text-white">Existing Warehouses</h3>
                                 <div class="mt-4 overflow-x-auto">
                                     <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
                                         <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.18em] text-gray-200">
@@ -1003,8 +1003,8 @@ $tabs = [
                     <section data-section="parameters" class="space-y-6<?= $activeSection === 'parameters' ? '' : ' hidden' ?>">
                         <div class="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
                             <div class="<?= $cardClass ?>">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Parameters</h3>
-                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-200">Set global warehouse defaults or override a specific SKU.</p>
+                                <h3 class="text-lg font-semibold text-white">Edit Parameters</h3>
+                                <p class="mt-1 text-sm text-gray-400">Set global warehouse defaults or override a specific SKU.</p>
                                 <form method="post" class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                     <input type="hidden" name="action" value="save_parameters">
                                     <div class="md:col-span-1 xl:col-span-1">
@@ -1043,7 +1043,7 @@ $tabs = [
                             </div>
                             <div class="flex flex-col gap-6">
                                 <div class="<?= $cardClass ?>">
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Warehouse Parameters</h3>
+                                    <h3 class="text-lg font-semibold text-white">Warehouse Parameters</h3>
                                     <div class="mt-4 overflow-x-auto">
                                         <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
                                             <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.18em] text-gray-200">
@@ -1075,7 +1075,7 @@ $tabs = [
                                     </div>
                                 </div>
                                 <div class="<?= $cardClass ?>">
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">SKU Overrides</h3>
+                                    <h3 class="text-lg font-semibold text-white">SKU Overrides</h3>
                                     <div class="mt-4 overflow-x-auto">
                                         <table class="min-w-full divide-y divide-white/10 text-sm text-gray-200">
                                             <thead class="bg-[#1b1e23]/60 text-xs font-semibold uppercase tracking-[0.18em] text-gray-200">
