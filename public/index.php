@@ -1342,6 +1342,7 @@ $tabs = [
             const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
             dashboardRequestController = controller;
             const signal = controller ? controller.signal : null;
+            const requestId = ++dashboardRequestId;
 
             setDashboardLoading(true);
 
@@ -1358,12 +1359,26 @@ $tabs = [
                         error.status = response.status;
                         throw error;
                     }
-                    return response
-                        .json()
-                        .catch((jsonError) => {
-                            jsonError.name = 'JsonParseError';
-                            throw jsonError;
+
+                    const contentType = response.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
+                        return response.text().then((bodyText) => {
+                            try {
+                                return JSON.parse(bodyText);
+                            } catch (jsonError) {
+                                jsonError.name = 'JsonParseError';
+                                jsonError.bodyText = bodyText;
+                                throw jsonError;
+                            }
                         });
+                    }
+
+                    return response.text().then((bodyText) => {
+                        const error = new Error('Server returned a non-JSON response');
+                        error.name = 'NonJsonResponseError';
+                        error.bodyText = bodyText;
+                        throw error;
+                    });
                 })
                 .then((payload) => {
                     if (payload === null || requestId !== dashboardRequestId) {
@@ -1551,12 +1566,23 @@ $tabs = [
                     if (error.name === 'HttpError' && typeof error.status === 'number') {
                         errorMessage = `Unable to load demand data (status ${error.status}). Please try again.`;
                     } else if (error.name === 'JsonParseError') {
-                        errorMessage = 'Unable to load demand data because the server response was invalid. Please try again.';
+                        const preview = typeof error.bodyText === 'string' && error.bodyText.trim()
+                            ? ` Response preview: ${error.bodyText.trim().slice(0, 200)}`
+                            : '';
+                        errorMessage = `Unable to load demand data because the server response was invalid.${preview} Please try again.`;
+                    } else if (error.name === 'NonJsonResponseError') {
+                        const preview = typeof error.bodyText === 'string' && error.bodyText.trim()
+                            ? ` Server response: ${error.bodyText.trim().slice(0, 200)}`
+                            : '';
+                        errorMessage = `Unable to load demand data because the server response was not JSON.${preview} Please contact an administrator.`;
                     } else if (error.name === 'TypeError') {
                         errorMessage = 'Unable to load demand data because the request failed. Please check your connection and try again.';
                     }
                     showDemandError(errorMessage);
                     console.error('Failed to load dashboard data', error);
+                    if ((error.name === 'NonJsonResponseError' || error.name === 'JsonParseError') && typeof error.bodyText === 'string') {
+                        console.error('Dashboard response body preview:', error.bodyText.slice(0, 300));
+                    }
                 })
                 .finally(() => {
                     if (!controller) {
