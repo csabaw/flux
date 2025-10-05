@@ -551,6 +551,14 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
     }
 
     $today = new \DateTimeImmutable('today');
+    $chartDaysLimit = isset($config['chart_max_days']) ? (int) $config['chart_max_days'] : 30;
+    if ($chartDaysLimit < 0) {
+        $chartDaysLimit = 0;
+    }
+    $lookbackDays = isset($config['lookback_days']) ? (int) $config['lookback_days'] : 0;
+    if ($lookbackDays < 0) {
+        $lookbackDays = 0;
+    }
     $data = [];
     $totalReorder = 0.0;
 
@@ -576,13 +584,27 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
         $salesByDate = $salesMap[$wId][$skuCode] ?? [];
         $totalQty = 0.0;
         $dailySeries = [];
+        $windowChartDays = $maWindow;
+        if ($chartDaysLimit > 0) {
+            $windowChartDays = min($windowChartDays, $chartDaysLimit);
+        }
+        if ($lookbackDays > 0) {
+            $windowChartDays = min($windowChartDays, $lookbackDays);
+        }
         for ($i = 0; $i < $maWindow; $i++) {
             $date = $today->modify('-' . $i . ' days')->format('Y-m-d');
             $qty = $salesByDate[$date] ?? 0.0;
-            $dailySeries[$date] = $qty;
+            if ($i < $windowChartDays) {
+                $dailySeries[$date] = $qty;
+            }
             $totalQty += $qty;
         }
-        ksort($dailySeries);
+        if ($dailySeries !== []) {
+            ksort($dailySeries);
+            if ($windowChartDays > 0 && count($dailySeries) > $windowChartDays) {
+                $dailySeries = array_slice($dailySeries, -$windowChartDays, null, true);
+            }
+        }
         $movingAverage = $totalQty / max(1, $maWindow);
         $effectiveAvg = $movingAverage;
         if ($params['min_avg_daily'] > 0 && $movingAverage < $params['min_avg_daily']) {
