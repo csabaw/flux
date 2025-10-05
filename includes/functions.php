@@ -73,8 +73,18 @@ function logSqlQuery(string $sql, string $context = 'query'): void
         }
     }
 
+    $logSql = $sql;
+    if (preg_match('/^(\s*)elect\b/i', $logSql) === 1) {
+        $corrected = preg_replace('/^(\s*)elect\b/i', '$1SELECT', $logSql, 1);
+        if (is_string($corrected)) {
+            $logSql = $corrected . ' /* auto-corrected missing SELECT keyword */';
+        } else {
+            $logSql = $sql;
+        }
+    }
+
     $timestamp = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
-    $entry = sprintf('[%s] %s: %s%s', $timestamp, $context, $sql, PHP_EOL);
+    $entry = sprintf('[%s] %s: %s%s', $timestamp, $context, $logSql, PHP_EOL);
     $logFile = $logDir . '/sql.log';
     error_clear_last();
     if (file_put_contents($logFile, $entry, FILE_APPEND) === false) {
