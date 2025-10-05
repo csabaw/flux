@@ -16,6 +16,7 @@ function getWarehouses(mysqli $mysqli): array
     $hasCreatedAt = $hasCreatedAtCache;
     $columns = 'id, name' . ($hasCreatedAt ? ', created_at' : '');
     $sql = 'SELECT ' . $columns . ' FROM warehouses ORDER BY name';
+    logSqlQuery($sql, 'getWarehouses');
 
     if ($result = $mysqli->query($sql)) {
         while ($row = $result->fetch_assoc()) {
@@ -51,6 +52,24 @@ function tableColumnExists(mysqli $mysqli, string $table, string $column): bool
     }
 
     return false;
+}
+
+/**
+ * Append an SQL statement to the shared log for troubleshooting.
+ */
+function logSqlQuery(string $sql, string $context = 'query'): void
+{
+    $logDir = dirname(__DIR__) . '/log';
+    if (!is_dir($logDir)) {
+        if (!mkdir($logDir, 0775, true) && !is_dir($logDir)) {
+            return;
+        }
+    }
+
+    $timestamp = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+    $entry = sprintf('[%s] %s: %s%s', $timestamp, $context, $sql, PHP_EOL);
+    $logFile = $logDir . '/sql.log';
+    @file_put_contents($logFile, $entry, FILE_APPEND);
 }
 
 /**
