@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS stock_snapshots (
     sku VARCHAR(120) NOT NULL,
     snapshot_date DATE NOT NULL,
     quantity DECIMAL(15, 3) NOT NULL DEFAULT 0,
+    product_name VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_stock_warehouse_sku_date (warehouse_id, sku, snapshot_date),
     CONSTRAINT fk_stock_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE

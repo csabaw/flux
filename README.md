@@ -72,6 +72,7 @@ Columns (header row required):
 |------------------|------------------------------------------|
 | `warehouse_name` | Warehouse name (auto-created).            |
 | `sku`            | SKU identifier.                          |
+| `product_name`   | Product name (optional).                 |
 | `snapshot_date`  | Date of the inventory snapshot.          |
 | `quantity`       | On-hand quantity at the snapshot date.   |
 
