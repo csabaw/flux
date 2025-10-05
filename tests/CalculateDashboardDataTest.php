@@ -181,6 +181,7 @@ $preparedResults = [
 
 $mysqli = new FakeMysqli($queryResults, $preparedResults);
 
+
 $config = [
     'lookback_days' => 7,
     'chart_max_days' => 3,
@@ -210,5 +211,19 @@ $expectedDates = [
     $today->format('Y-m-d'),
 ];
 assertSame($expectedDates, array_keys($row['daily_series']), 'Daily series should include the most recent dates');
+
+$expandedConfig = $config;
+$expandedConfig['chart_max_days'] = 10;
+$expandedConfig['lookback_days'] = 30;
+
+$expandedResult = calculateDashboardData($mysqli, $expandedConfig, ['warehouse_id' => 1]);
+$expandedRow = $expandedResult['data'][0];
+assertSame(10, count($expandedRow['daily_series']), 'Daily series should expand up to the chart_max_days value');
+
+$expectedExpandedDates = [];
+for ($i = 9; $i >= 0; $i--) {
+    $expectedExpandedDates[] = $today->modify('-' . $i . ' days')->format('Y-m-d');
+}
+assertSame($expectedExpandedDates, array_keys($expandedRow['daily_series']), 'Expanded series should preserve chronological order');
 
 echo "OK\n";

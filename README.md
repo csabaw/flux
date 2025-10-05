@@ -83,7 +83,7 @@ Columns (header row required):
 - `min_avg_daily` acts as a floor for average demand; values below the threshold use the threshold for replenishment calculations.
 - `safety_days` adds a buffer expressed as extra days of demand.
 - Reorder suggestions are the positive difference between target stock and the latest snapshot quantity.
-- The demand trend chart in the dashboard includes at most `chart_max_days` days (default 30). Adjust the `CHART_MAX_DAYS` environment variable if you need a longer history, or lower it to reduce response sizes for very large datasets.
+- The demand trend chart in the dashboard includes up to `chart_max_days` days (default 30) regardless of the moving-average window. Adjust the `CHART_MAX_DAYS` environment variable if you need a longer history, or lower it to reduce response sizes for very large datasets.
 
 Warehouse-level parameters can be overridden per SKU from the Parameters page. Removing an override reverts to warehouse defaults (or global defaults when no warehouse-specific values exist).
 
