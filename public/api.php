@@ -25,6 +25,31 @@ try {
     $payload = calculateDashboardData($mysqli, $config, $filters);
     echo json_encode($payload);
 } catch (\Throwable $e) {
+    $logDir = __DIR__ . '/../log';
+    $logFile = $logDir . '/api-errors.log';
+    $timestamp = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format(DATE_ATOM);
+    $requestUri = $_SERVER['REQUEST_URI'] ?? 'unknown';
+    $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'CLI';
+    $logEntry = sprintf(
+        "[%s] %s: %s in %s:%d\nRequest: %s %s\nStack trace:\n%s\n\n",
+        $timestamp,
+        get_class($e),
+        $e->getMessage(),
+        $e->getFile(),
+        $e->getLine(),
+        $requestMethod,
+        $requestUri,
+        $e->getTraceAsString()
+    );
+
+    try {
+        if (@file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX) === false) {
+            throw new \RuntimeException('Unable to write to API error log.');
+        }
+    } catch (\Throwable $logError) {
+        error_log('API logging failure: ' . $logError->getMessage() . ' | Original: ' . $e->getMessage());
+    }
+
     http_response_code(500);
     echo json_encode([
         'error' => 'Failed to compute dashboard data.',
