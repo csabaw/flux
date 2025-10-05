@@ -55,4 +55,5 @@ $config = [
         'safety_days' => (float) env('DEFAULT_SAFETY_DAYS', 0),
     ],
     'lookback_days' => (int) env('MAX_LOOKBACK_DAYS', 90),
+    'chart_max_days' => (int) env('CHART_MAX_DAYS', 30),
 ];

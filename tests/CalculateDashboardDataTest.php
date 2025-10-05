@@ -182,6 +182,7 @@ $mysqli = new FakeMysqli($queryResults, $preparedResults);
 
 $config = [
     'lookback_days' => 7,
+    'chart_max_days' => 3,
     'defaults' => [
         'days_to_cover' => 9,
         'ma_window_days' => 7,
@@ -198,5 +199,14 @@ assertSame('SKU-ONLY', $row['sku'], 'SKU from sku_parameters should be present')
 assertSame(1, $row['warehouse_id']);
 assertSame(1, $result['summary']['total_items']);
 assertSame($row['reorder_qty'], $result['summary']['total_reorder_qty']);
+assertSame(3, count($row['daily_series']), 'Daily series should respect chart_max_days limit');
+
+$today = new \DateTimeImmutable('today');
+$expectedDates = [
+    $today->modify('-2 days')->format('Y-m-d'),
+    $today->modify('-1 days')->format('Y-m-d'),
+    $today->format('Y-m-d'),
+];
+assertSame($expectedDates, array_keys($row['daily_series']), 'Daily series should include the most recent dates');
 
 echo "OK\n";
