@@ -8,13 +8,32 @@ declare(strict_types=1);
 function getWarehouses(mysqli $mysqli): array
 {
     $warehouses = [];
-    $result = $mysqli->query('SELECT id, name, created_at FROM warehouses ORDER BY name');
-    if ($result) {
+
+    static $hasCreatedAtCache;
+    if ($hasCreatedAtCache === null) {
+        $hasCreatedAtCache = tableColumnExists($mysqli, 'warehouses', 'created_at');
+    }
+    $hasCreatedAt = $hasCreatedAtCache;
+    $columns = 'id, name' . ($hasCreatedAt ? ', created_at' : '');
+    $sql = 'SELECT ' . $columns . ' FROM warehouses ORDER BY name';
+    logSqlQuery($sql, 'getWarehouses');
+
+    if ($result = $mysqli->query($sql)) {
         while ($row = $result->fetch_assoc()) {
-            $warehouses[(int) $row['id']] = $row;
+            $id = (int) ($row['id'] ?? 0);
+            if ($id <= 0) {
+                continue;
+            }
+
+            $warehouses[$id] = [
+                'id' => $id,
+                'name' => (string) ($row['name'] ?? ''),
+                'created_at' => $hasCreatedAt ? ($row['created_at'] ?? null) : null,
+            ];
         }
         $result->free();
     }
+
     return $warehouses;
 }
 
@@ -33,6 +52,24 @@ function tableColumnExists(mysqli $mysqli, string $table, string $column): bool
     }
 
     return false;
+}
+
+/**
+ * Append an SQL statement to the shared log for troubleshooting.
+ */
+function logSqlQuery(string $sql, string $context = 'query'): void
+{
+    $logDir = dirname(__DIR__) . '/log';
+    if (!is_dir($logDir)) {
+        if (!mkdir($logDir, 0775, true) && !is_dir($logDir)) {
+            return;
+        }
+    }
+
+    $timestamp = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+    $entry = sprintf('[%s] %s: %s%s', $timestamp, $context, $sql, PHP_EOL);
+    $logFile = $logDir . '/sql.log';
+    @file_put_contents($logFile, $entry, FILE_APPEND);
 }
 
 /**
