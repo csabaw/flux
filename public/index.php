@@ -603,7 +603,7 @@ $tabs = [
                                             <?php endforeach; ?>
                                         </select>
                                         <label class="sr-only" for="skuFilter">SKU filter</label>
-                                        <input id="skuFilter" type="text" placeholder="Filter by SKU" class="<?= $inputClass ?> sm:w-48">
+                                        <input id="skuFilter" type="text" placeholder="Filter by SKU and NAME" class="<?= $inputClass ?> sm:w-48">
                                     </div>
                                 </div>
                                 <div id="demandTableContainer" class="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-lg shadow-black/30">

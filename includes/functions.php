@@ -189,7 +189,12 @@ function getLatestStock(mysqli $mysqli, ?int $warehouseId = null, ?string $sku =
     }
     if ($sku !== null && $sku !== '') {
         $escaped = $mysqli->real_escape_string($sku);
-        $conditions[] = "sku = '" . $escaped . "'";
+        $likePattern = "'%" . $escaped . "%'";
+        if ($hasProductNameColumn) {
+            $conditions[] = "(sku LIKE " . $likePattern . " OR product_name LIKE " . $likePattern . ")";
+        } else {
+            $conditions[] = "sku LIKE " . $likePattern;
+        }
     }
     $where = '';
     if ($conditions) {
@@ -246,8 +251,8 @@ function getSalesMap(mysqli $mysqli, int $lookbackDays, ?int $warehouseId = null
         $types .= 'i';
     }
     if ($sku !== null && $sku !== '') {
-        $sql .= ' AND sku = ?';
-        $params[] = $sku;
+        $sql .= ' AND sku LIKE ?';
+        $params[] = '%' . $sku . '%';
         $types .= 's';
     }
 
@@ -524,23 +529,29 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
             $warehouseId = $candidate;
         }
     }
-    $sku = $filters['sku'] ?? null;
+    $searchTerm = null;
+    if (array_key_exists('sku', $filters)) {
+        $candidate = $filters['sku'];
+        if (is_string($candidate)) {
+            $candidate = trim($candidate);
+            if ($candidate !== '') {
+                $searchTerm = $candidate;
+            }
+        }
+    }
 
     $warehouses = getWarehouses($mysqli);
     $warehouseParams = getWarehouseParameters($mysqli);
     $skuParams = getSkuParameters($mysqli);
-    $stockMap = getLatestStock($mysqli, $warehouseId, $sku);
-    $salesMap = getSalesMap($mysqli, $config['lookback_days'], $warehouseId, $sku);
+    $stockMap = getLatestStock($mysqli, $warehouseId, $searchTerm);
+    $salesMap = getSalesMap($mysqli, $config['lookback_days'], $warehouseId, null);
 
     $comboKeys = [];
-    $registerCombo = static function (int $wId, string $skuCode) use (&$comboKeys, $warehouseId, $sku): void {
+    $registerCombo = static function (int $wId, string $skuCode) use (&$comboKeys, $warehouseId): void {
         if ($wId <= 0 || $skuCode === '') {
             return;
         }
         if ($warehouseId !== null && $warehouseId > 0 && $wId !== $warehouseId) {
-            return;
-        }
-        if ($sku !== null && $sku !== '' && $skuCode !== $sku) {
             return;
         }
 
@@ -633,6 +644,13 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
         $currentStock = (float) $stockInfo['quantity'];
         $snapshotDate = $stockInfo['snapshot_date'];
         $productName = (string) ($stockInfo['product_name'] ?? '');
+
+        if ($searchTerm !== null) {
+            $needle = $searchTerm;
+            if (stripos($skuCode, $needle) === false && stripos($productName, $needle) === false) {
+                continue;
+            }
+        }
 
         $targetStock = $effectiveAvg * ($params['days_to_cover'] + $params['safety_days']);
         $reorderQty = max(0.0, $targetStock - $currentStock);
