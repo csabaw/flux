@@ -670,14 +670,6 @@ $tabs = [
                             </div>
                             <div class="flex flex-col gap-6">
                                 <div class="<?= $cardClass ?>">
-                                    <h3 class="text-lg font-semibold text-white">Reorder Highlights</h3>
-                                    <p class="text-sm text-gray-400">Top 10 SKUs ranked by reorder quantity.</p>
-                                    <div class="mt-4 h-48">
-                                        <canvas id="reorderChart"></canvas>
-                                        <div id="reorderEmptyState" class="hidden py-6 text-center text-sm text-gray-500 dark:text-gray-400">Upload demand and stock data to see reorder insights.</div>
-                                    </div>
-                                </div>
-                                <div class="<?= $cardClass ?>">
                                     <h3 class="text-lg font-semibold text-white">Rolling Demand Trend</h3>
                                     <p class="text-sm text-gray-400">Select a SKU row to visualize its recent daily demand.</p>
                                     <div class="mt-4 h-48">
@@ -1160,7 +1152,6 @@ $tabs = [
         const sections = document.querySelectorAll('section[data-section]');
         const ACTIVE_CLASSES = ['bg-primary', 'text-white', 'shadow-sm'];
         const INACTIVE_CLASSES = ['text-gray-600', 'hover:bg-primary/10', 'hover:text-primary', 'dark:text-gray-300', 'dark:hover:text-primary'];
-        let reorderChart;
         let trendChart;
         let currentRows = [];
         let currentRowsMap = new Map();
@@ -1519,49 +1510,6 @@ $tabs = [
                         summaryWarehouses.textContent = warehouseSet.size;
                     }
 
-                    const reorderContainer = document.getElementById('reorderChart');
-                    const reorderEmpty = document.getElementById('reorderEmptyState');
-                    const topRows = [...rows].sort((a, b) => b.reorder_qty - a.reorder_qty).slice(0, 10);
-                    if (reorderContainer) {
-                        if (reorderChart) {
-                            reorderChart.destroy();
-                        }
-                        if (topRows.length === 0) {
-                            if (reorderEmpty) reorderEmpty.classList.remove('hidden');
-                        } else {
-                            if (reorderEmpty) reorderEmpty.classList.add('hidden');
-                            reorderChart = new Chart(reorderContainer.getContext('2d'), {
-                                type: 'bar',
-                                data: {
-                                    labels: topRows.map((row) => {
-                                        const productLabel = row.product_name && row.product_name !== '' ? row.product_name : row.sku;
-                                        return `${row.warehouse_name || 'Warehouse'}-${productLabel}`;
-                                    }),
-                                    datasets: [{
-                                        label: 'Reorder Qty',
-                                        data: topRows.map((row) => row.reorder_qty),
-                                        backgroundColor: 'rgba(15, 145, 189, 0.75)',
-                                        borderRadius: 8,
-                                    }],
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    plugins: {
-                                        legend: { display: false },
-                                    },
-                                    scales: {
-                                        x: { ticks: { color: '#6b7280' } },
-                                        y: {
-                                            beginAtZero: true,
-                                            ticks: { color: '#6b7280' },
-                                        },
-                                    },
-                                },
-                            });
-                        }
-                    }
-
                     if (trendChart) {
                         trendChart.destroy();
                     }
@@ -1598,14 +1546,6 @@ $tabs = [
                     const summaryWarehouses = document.getElementById('summaryWarehouses');
                     if (summaryWarehouses) {
                         summaryWarehouses.textContent = '0';
-                    }
-                    if (reorderChart) {
-                        reorderChart.destroy();
-                        reorderChart = null;
-                    }
-                    const reorderEmpty = document.getElementById('reorderEmptyState');
-                    if (reorderEmpty) {
-                        reorderEmpty.classList.remove('hidden');
                     }
                     if (trendChart) {
                         trendChart.destroy();
