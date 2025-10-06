@@ -400,8 +400,8 @@ $cardClass = "rounded-2xl border border-white/5 bg-[#23262b] p-6 shadow-[0_24px_
 $inputClass = "mt-1 block w-full rounded-xl border border-white/10 bg-[#1d2026] px-3 py-2 text-sm text-gray-100 shadow-inner transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40";
 $labelClass = "text-sm font-semibold text-gray-300";
 $helperClass = "mt-1 text-xs text-gray-600 dark:text-gray-300";
-$buttonPrimaryClass = "inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40";
-$buttonSecondaryClass = "inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-[#1f2227] px-5 py-2 text-sm font-semibold text-gray-200 transition hover:border-primary/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/30";
+$buttonPrimaryClass = "inline-flex items-center justify-center gap-3 rounded-full border border-primary/70 bg-gradient-to-r from-[#1fb6ff] via-[#12a1d9] to-[#0f91bd] px-6 py-2.5 text-sm font-semibold text-white shadow-[0_14px_32px_rgba(15,145,189,0.45)] transition hover:from-[#3ec8ff] hover:to-[#15a9e5] hover:shadow-[0_18px_36px_rgba(18,169,229,0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/70 focus-visible:ring-offset-[#121417]";
+$buttonSecondaryClass = "inline-flex items-center justify-center gap-3 rounded-full border border-white/20 bg-[#272c35] px-6 py-2.5 text-sm font-semibold text-gray-100 shadow-[0_12px_28px_rgba(9,13,19,0.55)] transition hover:border-primary/70 hover:bg-[#303744] hover:text-white hover:shadow-[0_16px_34px_rgba(15,145,189,0.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60 focus-visible:ring-offset-[#121417]";
 $checkboxClass = "h-4 w-4 rounded border-white/30 bg-[#1d2026] text-primary focus:ring-primary/60";
 $tabBaseClass = "section-tab border-b-2 border-transparent px-4 py-3 text-sm font-semibold tracking-wide text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-primary/30";
 $tabActiveClass = "border-primary text-white";
@@ -619,43 +619,43 @@ $tabs = [
                                             <thead class="bg-white/[0.03] text-xs font-medium uppercase tracking-[0.3em] text-gray-400">
                                                 <tr>
                                                     <th class="px-6 py-4 text-left text-gray-300">
-                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="warehouse">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 rounded-full text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60 focus-visible:ring-offset-[#121417]" data-sort-key="warehouse">
                                                             <span>Warehouse</span>
                                                             <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
                                                         </button>
                                                     </th>
                                                     <th class="px-6 py-4 text-left text-gray-300">
-                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="sku">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 rounded-full text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60 focus-visible:ring-offset-[#121417]" data-sort-key="sku">
                                                             <span>SKU</span>
                                                             <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
                                                         </button>
                                                     </th>
                                                     <th class="px-6 py-4 text-left text-gray-300">
-                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="productName">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 rounded-full text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60 focus-visible:ring-offset-[#121417]" data-sort-key="productName">
                                                             <span>Product</span>
                                                             <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
                                                         </button>
                                                     </th>
                                                     <th class="px-6 py-4 text-left text-gray-300">
-                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="onHand">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 rounded-full text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60 focus-visible:ring-offset-[#121417]" data-sort-key="onHand">
                                                             <span>On-hand</span>
                                                             <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
                                                         </button>
                                                     </th>
                                                     <th class="px-6 py-4 text-left text-gray-300">
-                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="movingAverage">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 rounded-full text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60 focus-visible:ring-offset-[#121417]" data-sort-key="movingAverage">
                                                             <span>Moving Avg</span>
                                                             <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
                                                         </button>
                                                     </th>
                                                     <th class="px-6 py-4 text-left text-gray-300">
-                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="daysOfCover">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 rounded-full text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60 focus-visible:ring-offset-[#121417]" data-sort-key="daysOfCover">
                                                             <span>Days of Cover</span>
                                                             <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
                                                         </button>
                                                     </th>
                                                     <th class="px-6 py-4 text-left text-gray-300">
-                                                        <button type="button" class="sort-button flex w-full items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.3em] text-gray-300 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" data-sort-key="reorderQty">
+                                                        <button type="button" class="sort-button flex w-full items-center gap-1 rounded-full text-left text-xs font-semibold uppercase tracking-[0.3em] text-gray-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60 focus-visible:ring-offset-[#121417]" data-sort-key="reorderQty">
                                                             <span>Reorder Qty</span>
                                                             <span class="material-symbols-outlined text-base leading-none opacity-0 transition" data-sort-icon>arrow_upward</span>
                                                         </button>

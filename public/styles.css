@@ -6,11 +6,68 @@ body {
     font-family: 'Manrope', 'Noto Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+button,
+[type="button"],
+[type="submit"] {
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+button:hover,
+[type="button"]:hover,
+[type="submit"]:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+}
+
+button:active,
+[type="button"]:active,
+[type="submit"]:active {
+    transform: translateY(0);
+    box-shadow: 0 10px 22px rgba(5, 10, 15, 0.35);
+}
+
+button:focus-visible,
+[type="button"]:focus-visible,
+[type="submit"]:focus-visible {
+    outline: none;
+}
+
 .section-tab {
     position: relative;
     transition: color 0.2s ease, border-color 0.2s ease;
     text-transform: uppercase;
     letter-spacing: 0.2em;
+}
+
+.sort-button {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(15, 145, 189, 0.08) 100%);
+    border: 1px solid rgba(15, 145, 189, 0.18);
+    padding: 0.45rem 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 14px 30px rgba(7, 12, 18, 0.45);
+}
+
+.sort-button:hover,
+.sort-button[aria-sort] {
+    background: linear-gradient(135deg, rgba(21, 169, 229, 0.25) 0%, rgba(15, 145, 189, 0.18) 100%);
+    border-color: rgba(21, 169, 229, 0.45);
+    color: #ffffff;
+    box-shadow: 0 18px 36px rgba(18, 169, 229, 0.35);
+}
+
+[data-dismiss-alert] {
+    border-radius: 9999px;
+    padding: 0.25rem 0.65rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+[data-dismiss-alert]:hover {
+    background: rgba(244, 63, 94, 0.18);
+    border-color: rgba(244, 63, 94, 0.35);
+    color: #fff;
+    box-shadow: 0 12px 28px rgba(244, 63, 94, 0.25);
 }
 
 .section-tab[aria-selected="true"] {
