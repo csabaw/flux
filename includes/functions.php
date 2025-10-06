@@ -178,6 +178,11 @@ function getSkuParameters(mysqli $mysqli): array
 
 function getLatestStock(mysqli $mysqli, ?int $warehouseId = null, ?string $sku = null): array
 {
+    static $hasProductNameColumn;
+    if ($hasProductNameColumn === null) {
+        $hasProductNameColumn = tableColumnExists($mysqli, 'stock_snapshots', 'product_name');
+    }
+
     $conditions = [];
     if ($warehouseId !== null && $warehouseId > 0) {
         $conditions[] = 'warehouse_id = ' . (int) $warehouseId;
@@ -191,7 +196,12 @@ function getLatestStock(mysqli $mysqli, ?int $warehouseId = null, ?string $sku =
         $where = 'WHERE ' . implode(' AND ', $conditions);
     }
 
-    $sql = 'SELECT warehouse_id, sku, quantity, snapshot_date '
+    $columns = 'warehouse_id, sku, quantity, snapshot_date';
+    if ($hasProductNameColumn) {
+        $columns .= ', product_name';
+    }
+
+    $sql = 'SELECT ' . $columns . ' '
         . 'FROM stock_snapshots '
         . $where
         . ' ORDER BY warehouse_id, sku, snapshot_date DESC, id DESC';
@@ -213,6 +223,9 @@ function getLatestStock(mysqli $mysqli, ?int $warehouseId = null, ?string $sku =
                 'quantity' => (float) $row['quantity'],
                 'snapshot_date' => $row['snapshot_date'],
             ];
+            if ($hasProductNameColumn) {
+                $stock[$wId][$skuCode]['product_name'] = (string) ($row['product_name'] ?? '');
+            }
         }
         $result->free();
     }
@@ -584,26 +597,31 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
         $salesByDate = $salesMap[$wId][$skuCode] ?? [];
         $totalQty = 0.0;
         $dailySeries = [];
-        $windowChartDays = $maWindow;
-        if ($chartDaysLimit > 0) {
-            $windowChartDays = min($windowChartDays, $chartDaysLimit);
-        }
+
+        $chartSeriesDays = $chartDaysLimit > 0 ? $chartDaysLimit : 0;
         if ($lookbackDays > 0) {
-            $windowChartDays = min($windowChartDays, $lookbackDays);
+            $chartSeriesDays = $chartSeriesDays > 0
+                ? min($chartSeriesDays, $lookbackDays)
+                : $lookbackDays;
         }
-        for ($i = 0; $i < $maWindow; $i++) {
+        if ($chartSeriesDays <= 0) {
+            $chartSeriesDays = $maWindow;
+        }
+
+        $seriesHorizon = max($maWindow, $chartSeriesDays);
+
+        for ($i = 0; $i < $seriesHorizon; $i++) {
             $date = $today->modify('-' . $i . ' days')->format('Y-m-d');
             $qty = $salesByDate[$date] ?? 0.0;
-            if ($i < $windowChartDays) {
+            if ($i < $chartSeriesDays) {
                 $dailySeries[$date] = $qty;
             }
-            $totalQty += $qty;
+            if ($i < $maWindow) {
+                $totalQty += $qty;
+            }
         }
         if ($dailySeries !== []) {
             ksort($dailySeries);
-            if ($windowChartDays > 0 && count($dailySeries) > $windowChartDays) {
-                $dailySeries = array_slice($dailySeries, -$windowChartDays, null, true);
-            }
         }
         $movingAverage = $totalQty / max(1, $maWindow);
         $effectiveAvg = $movingAverage;
@@ -611,9 +629,10 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
             $effectiveAvg = $params['min_avg_daily'];
         }
 
-        $stockInfo = $stockMap[$wId][$skuCode] ?? ['quantity' => 0.0, 'snapshot_date' => null];
+        $stockInfo = $stockMap[$wId][$skuCode] ?? ['quantity' => 0.0, 'snapshot_date' => null, 'product_name' => ''];
         $currentStock = (float) $stockInfo['quantity'];
         $snapshotDate = $stockInfo['snapshot_date'];
+        $productName = (string) ($stockInfo['product_name'] ?? '');
 
         $targetStock = $effectiveAvg * ($params['days_to_cover'] + $params['safety_days']);
         $reorderQty = max(0.0, $targetStock - $currentStock);
@@ -634,6 +653,7 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
             'warehouse_name' => $warehouseName,
             'warehouse_code' => $warehouseCode,
             'sku' => $skuCode,
+            'product_name' => $productName,
             'current_stock' => $roundedStock,
             'snapshot_date' => $snapshotDate,
             'moving_average' => round($movingAverage, 2),
@@ -868,6 +888,12 @@ function importStockCsv(
                 $index['snapshot_date'] = $idx;
             }
         }
+        if (isset($columnMap['product_name'])) {
+            $idx = (int) $columnMap['product_name'];
+            if ($idx >= 0 && $idx < $columnCount) {
+                $index['product_name'] = $idx;
+            }
+        }
         if ($snapshotOverride === null && !isset($index['snapshot_date'])) {
             fclose($handle);
             return ['success' => false, 'message' => 'Please provide a snapshot date.'];
@@ -883,9 +909,12 @@ function importStockCsv(
         }
 
         $index = array_flip($columns);
+        if (!isset($index['product_name']) && isset($index['name'])) {
+            $index['product_name'] = $index['name'];
+        }
     }
 
-    $insert = $mysqli->prepare('INSERT INTO stock_snapshots (warehouse_id, sku, snapshot_date, quantity) VALUES (?, ?, ?, ?)');
+    $insert = $mysqli->prepare('INSERT INTO stock_snapshots (warehouse_id, sku, snapshot_date, quantity, product_name) VALUES (?, ?, ?, ?, ?)');
     if (!$insert) {
         fclose($handle);
         return ['success' => false, 'message' => 'Failed to prepare stock insert statement.'];
@@ -894,7 +923,8 @@ function importStockCsv(
     $skuParam = '';
     $snapshotDateParam = $snapshotOverride ?? '';
     $quantityParam = 0.0;
-    $insert->bind_param('issd', $warehouseIdParam, $skuParam, $snapshotDateParam, $quantityParam);
+    $productNameParam = '';
+    $insert->bind_param('issds', $warehouseIdParam, $skuParam, $snapshotDateParam, $quantityParam, $productNameParam);
 
     $rowCount = 0;
     while (($row = fgetcsv($handle)) !== false) {
@@ -925,6 +955,12 @@ function importStockCsv(
             $warehouseIdParam = (int) $warehouseId;
             $skuParam = $skuRaw;
             $quantityParam = $quantityValue;
+            if (isset($index['product_name'])) {
+                $nameRaw = $row[$index['product_name']] ?? '';
+                $productNameParam = is_string($nameRaw) ? trim($nameRaw) : (string) $nameRaw;
+            } else {
+                $productNameParam = '';
+            }
         } else {
             if (count($row) !== $columnCount) {
                 continue;
@@ -950,6 +986,12 @@ function importStockCsv(
             }
             $skuParam = $skuRaw;
             $quantityParam = $quantityValue;
+            if (isset($index['product_name'])) {
+                $nameRaw = $row[$index['product_name']] ?? '';
+                $productNameParam = is_string($nameRaw) ? trim($nameRaw) : (string) $nameRaw;
+            } else {
+                $productNameParam = '';
+            }
         }
         $insert->execute();
         $rowCount++;

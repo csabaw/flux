@@ -171,7 +171,8 @@ $queryResults = [
             'safety_days' => 1.0,
         ],
     ],
-    'SELECT warehouse_id, sku, quantity, snapshot_date FROM stock_snapshots WHERE warehouse_id = 1 ORDER BY warehouse_id, sku, snapshot_date DESC, id DESC' => [],
+    "SHOW COLUMNS FROM `stock_snapshots` LIKE 'product_name'" => [[]],
+    'SELECT warehouse_id, sku, quantity, snapshot_date, product_name FROM stock_snapshots WHERE warehouse_id = 1 ORDER BY warehouse_id, sku, snapshot_date DESC, id DESC' => [],
 ];
 
 $preparedResults = [
@@ -179,6 +180,7 @@ $preparedResults = [
 ];
 
 $mysqli = new FakeMysqli($queryResults, $preparedResults);
+
 
 $config = [
     'lookback_days' => 7,
@@ -197,6 +199,7 @@ assertSame(1, count($result['data']), 'Expected a single SKU row');
 $row = $result['data'][0];
 assertSame('SKU-ONLY', $row['sku'], 'SKU from sku_parameters should be present');
 assertSame(1, $row['warehouse_id']);
+assertSame('', $row['product_name']);
 assertSame(1, $result['summary']['total_items']);
 assertSame($row['reorder_qty'], $result['summary']['total_reorder_qty']);
 assertSame(3, count($row['daily_series']), 'Daily series should respect chart_max_days limit');
@@ -208,5 +211,19 @@ $expectedDates = [
     $today->format('Y-m-d'),
 ];
 assertSame($expectedDates, array_keys($row['daily_series']), 'Daily series should include the most recent dates');
+
+$expandedConfig = $config;
+$expandedConfig['chart_max_days'] = 10;
+$expandedConfig['lookback_days'] = 30;
+
+$expandedResult = calculateDashboardData($mysqli, $expandedConfig, ['warehouse_id' => 1]);
+$expandedRow = $expandedResult['data'][0];
+assertSame(10, count($expandedRow['daily_series']), 'Daily series should expand up to the chart_max_days value');
+
+$expectedExpandedDates = [];
+for ($i = 9; $i >= 0; $i--) {
+    $expectedExpandedDates[] = $today->modify('-' . $i . ' days')->format('Y-m-d');
+}
+assertSame($expectedExpandedDates, array_keys($expandedRow['daily_series']), 'Expanded series should preserve chronological order');
 
 echo "OK\n";
