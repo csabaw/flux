@@ -237,7 +237,10 @@ function getLatestStock(mysqli $mysqli, ?int $warehouseId = null, ?string $sku =
     return $stock;
 }
 
-function getSalesMap(mysqli $mysqli, int $lookbackDays, ?int $warehouseId = null, ?string $sku = null): array
+/**
+ * @param array|string|null $skuFilter
+ */
+function getSalesMap(mysqli $mysqli, int $lookbackDays, ?int $warehouseId = null, $skuFilter = null): array
 {
     $startDate = (new \DateTimeImmutable('today'))->modify('-' . $lookbackDays . ' days');
     $params = [$startDate->format('Y-m-d')];
@@ -250,9 +253,32 @@ function getSalesMap(mysqli $mysqli, int $lookbackDays, ?int $warehouseId = null
         $params[] = $warehouseId;
         $types .= 'i';
     }
-    if ($sku !== null && $sku !== '') {
+    if (is_array($skuFilter)) {
+        $normalized = [];
+        foreach ($skuFilter as $candidate) {
+            if (!is_string($candidate)) {
+                continue;
+            }
+            $candidate = trim($candidate);
+            if ($candidate === '') {
+                continue;
+            }
+            $normalized[$candidate] = true;
+        }
+
+        if ($normalized === []) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($normalized), '?'));
+        $sql .= ' AND sku IN (' . $placeholders . ')';
+        foreach (array_keys($normalized) as $skuCode) {
+            $params[] = $skuCode;
+            $types .= 's';
+        }
+    } elseif (is_string($skuFilter) && $skuFilter !== '') {
         $sql .= ' AND sku LIKE ?';
-        $params[] = '%' . $sku . '%';
+        $params[] = '%' . $skuFilter . '%';
         $types .= 's';
     }
 
@@ -544,7 +570,57 @@ function calculateDashboardData(mysqli $mysqli, array $config, array $filters = 
     $warehouseParams = getWarehouseParameters($mysqli);
     $skuParams = getSkuParameters($mysqli);
     $stockMap = getLatestStock($mysqli, $warehouseId, $searchTerm);
-    $salesMap = getSalesMap($mysqli, $config['lookback_days'], $warehouseId, null);
+
+    $matchingSkuList = null;
+    if ($searchTerm !== null) {
+        $matchingSkuSet = [];
+        foreach ($stockMap as $items) {
+            foreach ($items as $skuCode => $info) {
+                if (!is_string($skuCode)) {
+                    continue;
+                }
+                $skuCode = trim($skuCode);
+                if ($skuCode === '') {
+                    continue;
+                }
+
+                $productName = (string) ($info['product_name'] ?? '');
+                if (
+                    stripos($skuCode, $searchTerm) !== false
+                    || ($productName !== '' && stripos($productName, $searchTerm) !== false)
+                ) {
+                    $matchingSkuSet[$skuCode] = true;
+                }
+            }
+        }
+
+        foreach ($skuParams as $items) {
+            foreach ($items as $skuCode => $_) {
+                if (!is_string($skuCode)) {
+                    continue;
+                }
+                $skuCode = trim($skuCode);
+                if ($skuCode === '') {
+                    continue;
+                }
+                if (stripos($skuCode, $searchTerm) !== false) {
+                    $matchingSkuSet[$skuCode] = true;
+                }
+            }
+        }
+
+        $matchingSkuList = array_keys($matchingSkuSet);
+    }
+
+    if ($searchTerm !== null) {
+        if ($matchingSkuList === []) {
+            $salesMap = getSalesMap($mysqli, $config['lookback_days'], $warehouseId, $searchTerm);
+        } else {
+            $salesMap = getSalesMap($mysqli, $config['lookback_days'], $warehouseId, $matchingSkuList);
+        }
+    } else {
+        $salesMap = getSalesMap($mysqli, $config['lookback_days'], $warehouseId, null);
+    }
 
     $comboKeys = [];
     $registerCombo = static function (int $wId, string $skuCode) use (&$comboKeys, $warehouseId): void {
