@@ -237,7 +237,10 @@ function getLatestStock(mysqli $mysqli, ?int $warehouseId = null, ?string $sku =
     return $stock;
 }
 
-function getSalesMap(mysqli $mysqli, int $lookbackDays, ?int $warehouseId = null, array|string|null $skuFilter = null): array
+/**
+ * @param array|string|null $skuFilter
+ */
+function getSalesMap(mysqli $mysqli, int $lookbackDays, ?int $warehouseId = null, $skuFilter = null): array
 {
     $startDate = (new \DateTimeImmutable('today'))->modify('-' . $lookbackDays . ' days');
     $params = [$startDate->format('Y-m-d')];
