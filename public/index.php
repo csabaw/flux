@@ -528,8 +528,8 @@ $tabs = [
                     <div class="flex min-h-[60vh] items-center justify-center">
                         <div class="w-full max-w-md <?= $cardClass ?> sm:p-8">
                             <div class="mb-6 text-center">
-                                <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Admin Login</h2>
-                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Sign in to access warehouse demand insights.</p>
+                                <h2 class="text-lg font-semibold text-white">Admin Login</h2>
+                                <p class="mt-2 text-sm text-gray-400">Sign in to access warehouse demand insights.</p>
                             </div>
                             <form method="post" class="space-y-4" novalidate>
                                 <input type="hidden" name="action" value="login">
@@ -827,7 +827,7 @@ $tabs = [
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <h3 class="text-lg font-semibold text-white">Upload Stock Snapshot CSV</h3>
-                                        <p class="text-sm text-gray-400">Provide the latest stock position and map SKU, product name, and quantity columns.</p>
+                                        <p class="text-sm text-gray-400">Provide the latest stock position and map SKU and quantity columns.</p>
                                     </div>
                                     <?php if ($stockPreview): ?>
                                     <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Preview ready</span>
